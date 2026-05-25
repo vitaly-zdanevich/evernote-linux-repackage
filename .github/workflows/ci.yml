@@ -1,0 +1,264 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+      - run: npm run check
+      - run: npm test
+
+  build-pinned:
+    name: build pinned (${{ matrix.appimage_arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: test
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target_arch: x64
+            appimage_arch: x86_64
+            runner: ubuntu-22.04
+            electron_sha256: 02e644d75392a1ea8991106bc77e1db243ee1fc0c23107dc3b253ed545dd4c66
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+            appimagetool_sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+            appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+          - target_arch: arm64
+            appimage_arch: aarch64
+            runner: ubuntu-22.04-arm
+            electron_sha256: 7c76a5147a9870b8bcbd859278148e1e326f98ea6a5dcb3ac2707d39bd22b2d5
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
+            appimagetool_sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-aarch64
+            appimage_runtime_sha256: 00cbdfcf917cc6c0ff6d3347d59e0ca1f7f45a6df1a428a0d6d8a78664d87444
+    env:
+      BUILD_FLAVOR: "pinned"
+      TARGET_ARCH: ${{ matrix.target_arch }}
+      APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
+      EVERNOTE_URL: "https://win.desktop.evernote.com/builds/Evernote-latest.exe"
+      EVERNOTE_CACHE_NAME: "Evernote-11.17.3.20260518103423.exe"
+      EVERNOTE_EXPECTED_VERSION: "11.17.3"
+      EVERNOTE_SHA256: "a95701bb752fcc4c5c8f6f5fe19ca665f6b5ba7dcc5f1e3bc39c5611768544bd"
+      ELECTRON_EXPECTED_VERSION: "37.6.0"
+      ELECTRON_SHA256: ${{ matrix.electron_sha256 }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl p7zip-full unzip build-essential pkg-config libsecret-1-dev python3 imagemagick desktop-file-utils file xvfb libgtk-3-0 libnss3 libxss1 libasound2 libgbm1 libatk-bridge2.0-0 libx11-xcb1 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libxkbcommon0 libxshmfence1
+      - name: Prepare pinned AppImage tooling
+        env:
+          APPIMAGETOOL_URL: ${{ matrix.appimagetool_url }}
+          APPIMAGETOOL_SHA256: ${{ matrix.appimagetool_sha256 }}
+          APPIMAGE_RUNTIME_URL: ${{ matrix.appimage_runtime_url }}
+          APPIMAGE_RUNTIME_SHA256: ${{ matrix.appimage_runtime_sha256 }}
+        run: |
+          mkdir -p .cache/appimagetool
+          APPIMAGETOOL_FILE="appimagetool-${APPIMAGE_ARCH}.AppImage"
+          RUNTIME_FILE="runtime-${APPIMAGE_ARCH}"
+          curl -L --retry 3 -o ".cache/appimagetool/$APPIMAGETOOL_FILE" "$APPIMAGETOOL_URL"
+          echo "$APPIMAGETOOL_SHA256  .cache/appimagetool/$APPIMAGETOOL_FILE" | sha256sum -c -
+          curl -L --retry 3 -o ".cache/appimagetool/$RUNTIME_FILE" "$APPIMAGE_RUNTIME_URL"
+          echo "$APPIMAGE_RUNTIME_SHA256  .cache/appimagetool/$RUNTIME_FILE" | sha256sum -c -
+          chmod +x ".cache/appimagetool/$APPIMAGETOOL_FILE"
+          cd .cache/appimagetool
+          "./$APPIMAGETOOL_FILE" --appimage-extract
+      - name: Build, verify, smoke, and package
+        run: |
+          npm run build
+          PORT_DIR="$(node -p 'require("./dist/build-info.json").portDir')"
+          test -x "$PORT_DIR/evernote"
+          test -f "$PORT_DIR/resources/app.asar"
+          node scripts/patch-evernote-bundle.js "$PORT_DIR/resources/app.asar"
+          EVERNOTE_PORT_DIR="$PORT_DIR" npm run verify
+          EVERNOTE_PORT_DIR="$PORT_DIR" npm run smoke
+          EVERNOTE_PORT_DIR="$PORT_DIR" APPIMAGETOOL="$GITHUB_WORKSPACE/.cache/appimagetool/squashfs-root/AppRun" APPIMAGE_RUNTIME_FILE="$GITHUB_WORKSPACE/.cache/appimagetool/runtime-${APPIMAGE_ARCH}" npm run package:appimage
+          APPIMAGE="$(find dist -maxdepth 1 -name "*-${APPIMAGE_ARCH}.AppImage" -type f -print -quit)"
+          test -n "$APPIMAGE"
+          test -x "$APPIMAGE"
+          APPIMAGE_EXTRACT_AND_RUN=1 EVERNOTE_SMOKE_EXECUTABLE="$APPIMAGE" npm run smoke
+          npm run checksums
+          cat dist/SHA256SUMS
+          cd dist
+          sha256sum -c SHA256SUMS
+          cd ..
+          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}"
+          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
+          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
+          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evernote-linux-repackage-pinned-${{ matrix.appimage_arch }}-${{ github.sha }}
+          if-no-files-found: error
+          path: ci-artifacts/
+
+  build-latest:
+    name: build latest canary (${{ matrix.appimage_arch }})
+    runs-on: ${{ matrix.runner }}
+    needs: test
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target_arch: x64
+            appimage_arch: x86_64
+            runner: ubuntu-22.04
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+            appimagetool_sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+            appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+          - target_arch: arm64
+            appimage_arch: aarch64
+            runner: ubuntu-22.04-arm
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
+            appimagetool_sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-aarch64
+            appimage_runtime_sha256: 00cbdfcf917cc6c0ff6d3347d59e0ca1f7f45a6df1a428a0d6d8a78664d87444
+    env:
+      BUILD_FLAVOR: "latest"
+      TARGET_ARCH: ${{ matrix.target_arch }}
+      APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "20"
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl p7zip-full unzip build-essential pkg-config libsecret-1-dev python3 imagemagick desktop-file-utils file xvfb libgtk-3-0 libnss3 libxss1 libasound2 libgbm1 libatk-bridge2.0-0 libx11-xcb1 libdrm2 libxcomposite1 libxdamage1 libxrandr2 libxkbcommon0 libxshmfence1
+      - name: Prepare pinned AppImage tooling
+        env:
+          APPIMAGETOOL_URL: ${{ matrix.appimagetool_url }}
+          APPIMAGETOOL_SHA256: ${{ matrix.appimagetool_sha256 }}
+          APPIMAGE_RUNTIME_URL: ${{ matrix.appimage_runtime_url }}
+          APPIMAGE_RUNTIME_SHA256: ${{ matrix.appimage_runtime_sha256 }}
+        run: |
+          mkdir -p .cache/appimagetool
+          APPIMAGETOOL_FILE="appimagetool-${APPIMAGE_ARCH}.AppImage"
+          RUNTIME_FILE="runtime-${APPIMAGE_ARCH}"
+          curl -L --retry 3 -o ".cache/appimagetool/$APPIMAGETOOL_FILE" "$APPIMAGETOOL_URL"
+          echo "$APPIMAGETOOL_SHA256  .cache/appimagetool/$APPIMAGETOOL_FILE" | sha256sum -c -
+          curl -L --retry 3 -o ".cache/appimagetool/$RUNTIME_FILE" "$APPIMAGE_RUNTIME_URL"
+          echo "$APPIMAGE_RUNTIME_SHA256  .cache/appimagetool/$RUNTIME_FILE" | sha256sum -c -
+          chmod +x ".cache/appimagetool/$APPIMAGETOOL_FILE"
+          cd .cache/appimagetool
+          "./$APPIMAGETOOL_FILE" --appimage-extract
+      - name: Build, verify, smoke, and package
+        run: |
+          npm run build
+          PORT_DIR="$(node -p 'require("./dist/build-info.json").portDir')"
+          node scripts/patch-evernote-bundle.js "$PORT_DIR/resources/app.asar"
+          EVERNOTE_PORT_DIR="$PORT_DIR" npm run verify
+          EVERNOTE_PORT_DIR="$PORT_DIR" npm run smoke
+          EVERNOTE_PORT_DIR="$PORT_DIR" APPIMAGETOOL="$GITHUB_WORKSPACE/.cache/appimagetool/squashfs-root/AppRun" APPIMAGE_RUNTIME_FILE="$GITHUB_WORKSPACE/.cache/appimagetool/runtime-${APPIMAGE_ARCH}" npm run package:appimage
+          APPIMAGE="$(find dist -maxdepth 1 -name "*-${APPIMAGE_ARCH}.AppImage" -type f -print -quit)"
+          APPIMAGE_EXTRACT_AND_RUN=1 EVERNOTE_SMOKE_EXECUTABLE="$APPIMAGE" npm run smoke
+          npm run checksums
+          cat dist/SHA256SUMS
+          cd dist
+          sha256sum -c SHA256SUMS
+          cd ..
+          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}"
+          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
+          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
+          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: evernote-linux-repackage-latest-${{ matrix.appimage_arch }}-${{ github.sha }}
+          if-no-files-found: error
+          path: ci-artifacts/
+
+  release:
+    runs-on: ubuntu-22.04
+    needs: build-pinned
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: evernote-linux-repackage-pinned-*
+          merge-multiple: true
+      - name: Prepare release assets
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          mkdir -p release-assets
+          for APPIMAGE_ARCH in x86_64 aarch64; do
+            ARCH_DIR="$APPIMAGE_ARCH"
+            test -d "$ARCH_DIR"
+            SOURCE_APPIMAGE="$(find "$ARCH_DIR" -maxdepth 1 -name '*.AppImage' -type f -print -quit)"
+            test -n "$SOURCE_APPIMAGE"
+            test -f "$ARCH_DIR/build-info.json"
+            APPIMAGE_NAME="Evernote-${TAG_NAME}-${APPIMAGE_ARCH}.AppImage"
+            BUILD_INFO_NAME="build-info-${APPIMAGE_ARCH}.json"
+            cp "$SOURCE_APPIMAGE" "release-assets/$APPIMAGE_NAME"
+            cp "$ARCH_DIR/build-info.json" "release-assets/$BUILD_INFO_NAME"
+          done
+          cd release-assets
+          sha256sum *.AppImage build-info-*.json > SHA256SUMS
+          sha256sum -c SHA256SUMS
+          cd ..
+          {
+            cat <<EOF
+          Unofficial Evernote Linux AppImages built from tag $TAG_NAME.
+
+          This is an unofficial community project. It is not affiliated with, endorsed by, or supported by Evernote or Bending Spoons. Evernote is a trademark of its respective owner.
+
+          The official Evernote client is proprietary software. These AppImages are rebuilt/repackaged binaries, and redistributing them may be subject to Evernote's license and trademark terms.
+
+          Release assets:
+          EOF
+            find release-assets -maxdepth 1 -type f -printf "- %f\n" | sort
+            cat <<EOF
+
+          Verify checksums with:
+
+              sha256sum -c SHA256SUMS
+
+          Verify GitHub artifact attestations with:
+
+              for file in *.AppImage; do gh attestation verify "\$file" -R "$GITHUB_REPOSITORY"; done
+
+          build-info-*.json records the exact upstream Evernote installer SHA-256, Evernote version, Electron version, Electron zip SHA-256, and target architecture used for each release artifact.
+          EOF
+          } > RELEASE_NOTES.md
+      - name: Generate artifact attestations
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: release-assets/*
+      - name: Publish GitHub release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release edit "$TAG_NAME" --title "evernote-linux-repackage $TAG_NAME" --notes-file RELEASE_NOTES.md
+            gh release upload "$TAG_NAME" release-assets/* --clobber
+          else
+            gh release create "$TAG_NAME" release-assets/* --title "evernote-linux-repackage $TAG_NAME" --notes-file RELEASE_NOTES.md
+          fi
