@@ -72,3 +72,19 @@ test("smoke log evaluation rejects app protocol load failures", () => {
 
   assert.throws(() => evaluateSmokeLogs(logs), /app URL load failure/);
 });
+
+test("smoke log evaluation rejects missing native library startup failures", () => {
+  const logs = [
+    "A JavaScript error occurred in the main process",
+    "Uncaught Exception:",
+    "Error: libsecret-1.so.0: cannot open shared object file: No such file or directory",
+  ].join("\n");
+
+  assert.throws(() => evaluateSmokeLogs(logs), /main process JavaScript startup error/);
+});
+
+test("smoke log evaluation rejects Chromium sandbox startup failures", () => {
+  const logs = "[60:0525/073923.126599:FATAL:content/browser/sandbox_host_linux.cc:41] Check failed.";
+
+  assert.throws(() => evaluateSmokeLogs(logs), /Chromium sandbox startup failure/);
+});

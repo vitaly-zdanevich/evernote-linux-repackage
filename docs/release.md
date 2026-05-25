@@ -38,6 +38,7 @@ npm run smoke
 APPIMAGE_EXTRACT_AND_RUN=1 \
 EVERNOTE_SMOKE_EXECUTABLE=dist/Evernote-<version>-x86_64.AppImage \
 npm run smoke
+scripts/smoke-test-clean-container.sh dist/Evernote-<version>-x86_64.AppImage x86_64
 ```
 
 Confirm `.github/workflows/ci.yml` still pins:

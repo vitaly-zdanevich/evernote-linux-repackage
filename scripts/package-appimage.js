@@ -8,6 +8,13 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const DIST_DIR = path.join(ROOT, "dist");
 const DEFAULT_APP_DIR = path.join(DIST_DIR, "AppDir");
+const APPIMAGE_RUNTIME_LIB_DIR = path.join("usr", "lib", "evernote", "appimage-libs");
+const BUNDLED_RUNTIME_LIBRARIES = [
+  {
+    soname: "libsecret-1.so.0",
+    reason: "keytar login secret storage",
+  },
+];
 const DEFAULT_TARGET_ARCH = normalizeTargetArch(
   process.env.EVERNOTE_TARGET_ARCH || process.env.TARGET_ARCH || process.arch,
 );
@@ -37,6 +44,75 @@ function commandPath(command) {
     stdio: ["ignore", "pipe", "ignore"],
   });
   return result.status === 0 ? result.stdout.trim() : null;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function candidateLibraryDirs() {
+  const dirs = new Set();
+  for (const entry of String(process.env.LD_LIBRARY_PATH || "").split(":")) {
+    if (entry) {
+      dirs.add(entry);
+    }
+  }
+  for (const dir of [
+    "/lib",
+    "/lib64",
+    "/usr/lib",
+    "/usr/lib64",
+    "/lib/x86_64-linux-gnu",
+    "/usr/lib/x86_64-linux-gnu",
+    "/lib/aarch64-linux-gnu",
+    "/usr/lib/aarch64-linux-gnu",
+  ]) {
+    dirs.add(dir);
+  }
+  return [...dirs];
+}
+
+function ldconfigLibraryPaths(soname) {
+  const ldconfig = commandPath("ldconfig");
+  if (!ldconfig) {
+    return [];
+  }
+
+  const result = childProcess.spawnSync(ldconfig, ["-p"], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
+  if (result.status !== 0) {
+    return [];
+  }
+
+  const pattern = new RegExp(`^\\s*${escapeRegExp(soname)}\\s+\\([^)]*\\)\\s+=>\\s+(.+)$`);
+  return result.stdout
+    .split(/\r?\n/)
+    .map((line) => {
+      const match = line.match(pattern);
+      return match ? match[1].trim() : "";
+    })
+    .filter(Boolean);
+}
+
+function findSharedLibrary(soname) {
+  const candidates = [
+    ...ldconfigLibraryPaths(soname),
+    ...candidateLibraryDirs().map((dir) => path.join(dir, soname)),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return null;
 }
 
 function ensureDir(dir) {
@@ -172,6 +248,42 @@ function convertIcon(portDir, appDir) {
   fs.copyFileSync(rootIcon, hicolorIcon);
 }
 
+function bundleRuntimeLibraries(appDir) {
+  const bundledLibDir = path.join(appDir, APPIMAGE_RUNTIME_LIB_DIR);
+  ensureDir(bundledLibDir);
+
+  for (const library of BUNDLED_RUNTIME_LIBRARIES) {
+    const source = findSharedLibrary(library.soname);
+    if (!source) {
+      throw new Error(
+        `Required runtime library not found: ${library.soname}. Install libsecret runtime/development packages before packaging.`,
+      );
+    }
+
+    const destination = path.join(bundledLibDir, library.soname);
+    fs.copyFileSync(source, destination);
+    fs.chmodSync(destination, 0o644);
+    log(`Bundled ${library.soname} for ${library.reason}: ${source}`);
+  }
+}
+
+function appRunScript() {
+  const libraryPath = `$APPDIR/${APPIMAGE_RUNTIME_LIB_DIR}`;
+  return [
+    "#!/usr/bin/env sh",
+    "set -eu",
+    'HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
+    'APPDIR=${APPDIR:-$HERE}',
+    `if [ -n "\${LD_LIBRARY_PATH:-}" ]; then`,
+    `  export LD_LIBRARY_PATH="${libraryPath}:$LD_LIBRARY_PATH"`,
+    "else",
+    `  export LD_LIBRARY_PATH="${libraryPath}"`,
+    "fi",
+    'exec "$APPDIR/usr/lib/evernote/evernote" "$@"',
+    "",
+  ].join("\n");
+}
+
 function prepareAppDir({ portDir, appDir }) {
   const resolvedPortDir = path.resolve(portDir);
   const resolvedAppDir = path.resolve(appDir);
@@ -213,17 +325,8 @@ function prepareAppDir({ portDir, appDir }) {
   fs.writeFileSync(path.join(resolvedAppDir, "evernote.desktop"), desktopEntry);
   fs.writeFileSync(path.join(applicationsDir, "evernote.desktop"), desktopEntry);
 
-  writeFileExecutable(
-    path.join(resolvedAppDir, "AppRun"),
-    [
-      "#!/usr/bin/env sh",
-      "set -eu",
-      'HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
-      'APPDIR=${APPDIR:-$HERE}',
-      'exec "$APPDIR/usr/lib/evernote/evernote" "$@"',
-      "",
-    ].join("\n"),
-  );
+  bundleRuntimeLibraries(resolvedAppDir);
+  writeFileExecutable(path.join(resolvedAppDir, "AppRun"), appRunScript());
 
   convertIcon(resolvedPortDir, resolvedAppDir);
 
@@ -324,7 +427,10 @@ if (require.main === module) {
 }
 
 module.exports = {
+  APPIMAGE_RUNTIME_LIB_DIR,
   appImageArchForTargetArch,
+  appRunScript,
+  findSharedLibrary,
   packageAppImage,
   prepareAppDir,
 };

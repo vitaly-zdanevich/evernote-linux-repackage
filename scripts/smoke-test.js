@@ -62,6 +62,22 @@ const FORBIDDEN_LOG_CHECKS = [
     name: "app protocol failure",
     pattern: /Failed to load URL app:\/\/evernote/i,
   },
+  {
+    name: "main process JavaScript startup error",
+    pattern: /A JavaScript error occurred in the main process/i,
+  },
+  {
+    name: "main process uncaught exception",
+    pattern: /Uncaught Exception/i,
+  },
+  {
+    name: "missing native shared library",
+    pattern: /cannot open shared object file/i,
+  },
+  {
+    name: "Chromium sandbox startup failure",
+    pattern: /FATAL:content\/browser\/sandbox_host_linux\.cc/i,
+  },
 ];
 
 function log(message) {
@@ -165,18 +181,30 @@ function hasRequiredStartupEvents(combinedLogs) {
   return missingRequiredStartupChecks(combinedLogs).length === 0;
 }
 
+function firstForbiddenLogCheck(combinedLogs) {
+  for (const check of FORBIDDEN_LOG_CHECKS) {
+    if (check.pattern.test(combinedLogs)) {
+      return check;
+    }
+  }
+  return null;
+}
+
+function throwIfForbiddenSmokeLogs(combinedLogs) {
+  const check = firstForbiddenLogCheck(combinedLogs);
+  if (check) {
+    throw new Error(`Smoke test saw ${check.name}: ${check.pattern}\n${tail(combinedLogs)}`);
+  }
+}
+
 function evaluateSmokeLogs(combinedLogs) {
+  throwIfForbiddenSmokeLogs(combinedLogs);
+
   const missing = missingRequiredStartupChecks(combinedLogs);
   if (missing.length > 0) {
     throw new Error(
       `Smoke test missing required startup events: ${missing.join(", ")}\n${tail(combinedLogs)}`,
     );
-  }
-
-  for (const check of FORBIDDEN_LOG_CHECKS) {
-    if (check.pattern.test(combinedLogs)) {
-      throw new Error(`Smoke test saw ${check.name}: ${check.pattern}\n${tail(combinedLogs)}`);
-    }
   }
 }
 
@@ -283,6 +311,7 @@ async function runSmokeTest(options) {
     }
 
     if (!ready) {
+      throwIfForbiddenSmokeLogs(combinedLogs);
       const missing = missingRequiredStartupChecks(combinedLogs);
       throw new Error(
         `Evernote did not complete smoke startup checks within ${options.timeoutMs}ms. Missing: ${missing.join(", ")}. Exit: ${JSON.stringify(exitInfo)}\n${tail(combinedLogs)}`,

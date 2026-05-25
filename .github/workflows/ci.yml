@@ -96,6 +96,7 @@ jobs:
           test -n "$APPIMAGE"
           test -x "$APPIMAGE"
           APPIMAGE_EXTRACT_AND_RUN=1 EVERNOTE_SMOKE_EXECUTABLE="$APPIMAGE" npm run smoke
+          scripts/smoke-test-clean-container.sh "$APPIMAGE" "$APPIMAGE_ARCH"
           npm run checksums
           cat dist/SHA256SUMS
           cd dist
@@ -175,6 +176,7 @@ jobs:
           EVERNOTE_PORT_DIR="$PORT_DIR" APPIMAGETOOL="$GITHUB_WORKSPACE/.cache/appimagetool/squashfs-root/AppRun" APPIMAGE_RUNTIME_FILE="$GITHUB_WORKSPACE/.cache/appimagetool/runtime-${APPIMAGE_ARCH}" npm run package:appimage
           APPIMAGE="$(find dist -maxdepth 1 -name "*-${APPIMAGE_ARCH}.AppImage" -type f -print -quit)"
           APPIMAGE_EXTRACT_AND_RUN=1 EVERNOTE_SMOKE_EXECUTABLE="$APPIMAGE" npm run smoke
+          scripts/smoke-test-clean-container.sh "$APPIMAGE" "$APPIMAGE_ARCH"
           npm run checksums
           cat dist/SHA256SUMS
           cd dist

@@ -31,7 +31,7 @@ If you use Evernote on Linux, consider writing to Evernote and asking for an off
 - `unzip`
 - C/C++ build tools: `gcc`, `g++`, `make`
 - `pkg-config`
-- libsecret development headers, for `keytar`
+- libsecret development headers, for building `keytar`
 
 On Debian/Ubuntu-like systems the native build prerequisites are typically:
 
@@ -130,6 +130,8 @@ Use the matching AppImage architecture name for arm64 packaging:
 The AppImage is written to `dist/Evernote-<version>-x86_64.AppImage`. Packaging requires ImageMagick because Evernote ships its Linux-usable icon as an ICO file inside the Windows payload.
 On arm64 builds, the AppImage is written to `dist/Evernote-<version>-aarch64.AppImage`.
 
+The AppImage bundles `libsecret-1.so.0` because Evernote loads `keytar` during startup. A desktop Secret Service implementation, such as GNOME Keyring or KWallet, is still needed for login token storage.
+
 Generate release checksums with:
 
 ```bash
@@ -182,7 +184,7 @@ The GitHub Actions workflow has two build jobs:
 - `build pinned` verifies the pinned Evernote installer SHA-256, expected Evernote version, expected Electron version, and Electron zip SHA-256. This is the only build used by GitHub releases.
 - `build latest canary` follows Evernote's current `latest` installer. It runs on schedules, manual workflows, and tags; it is allowed to fail so a new upstream Evernote release does not block a pinned release.
 
-Both build jobs compile native modules, run the smoke test on the unpacked bundle, build an AppImage, smoke-test that AppImage with `APPIMAGE_EXTRACT_AND_RUN=1`, write `dist/SHA256SUMS`, and upload architecture-specific artifacts for x86_64 and aarch64.
+Both build jobs compile native modules, run the smoke test on the unpacked bundle, build an AppImage, verify bundled AppImage runtime libraries, smoke-test that AppImage with `APPIMAGE_EXTRACT_AND_RUN=1`, run an x86_64 clean-container smoke test without host `libsecret`, write `dist/SHA256SUMS`, and upload architecture-specific artifacts for x86_64 and aarch64.
 
 Tag workflows also run a GitHub `release` job. It publishes the pinned x86_64 and aarch64 AppImages, per-architecture `build-info-*.json` files, `SHA256SUMS`, release notes with the unofficial/proprietary redistribution warning, and GitHub artifact attestations.
 
