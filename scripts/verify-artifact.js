@@ -381,6 +381,44 @@ function verifyBlackBackgroundThemePatch(asarPath) {
   process.stdout.write("Verified black background theme patches.\n");
 }
 
+function verifyEditorTextSelectionPatch(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const selectionFilePattern =
+    /^(?:ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+  const staleSelectionPattern = /rgba\(33,133,231,\.(?:25|3)\)/;
+  const patchedSelectionPattern = /rgba\(33,133,231,\.4\)\s*/;
+  const staleFiles = [];
+  let checkedFiles = 0;
+  let patchedFiles = 0;
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !selectionFilePattern.test(filePath)) {
+      return;
+    }
+
+    checkedFiles += 1;
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (staleSelectionPattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedSelectionPattern.test(text)) {
+      patchedFiles += 1;
+    }
+  });
+
+  if (checkedFiles === 0) {
+    throw new Error("No editor selection CSS files found.");
+  }
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched editor text selection color remains in ${staleFiles.join(", ")}.`);
+  }
+  if (patchedFiles === 0) {
+    throw new Error("Missing brightened editor text selection marker.");
+  }
+
+  process.stdout.write("Verified editor text selection overlays are brighter.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -476,6 +514,7 @@ function verifyArtifact(options) {
   verifyFlacMimePatch(asarPath);
   verifyAiCopilotDisclaimerPatch(asarPath);
   verifyBlackBackgroundThemePatch(asarPath);
+  verifyEditorTextSelectionPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);

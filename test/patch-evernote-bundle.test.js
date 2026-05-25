@@ -178,6 +178,10 @@ function makePatchableEditorCss() {
     "--color-background-fill-secondary:var(--colors-grey-97);",
     "--color-surface-fill-tertiary-enabled:var(--colors-grey-95);",
     "}",
+    "body ::selection{background:rgba(33,133,231,.3)}",
+    "body.darkMode ::selection{background:rgba(33,133,231,.25)}",
+    ".linkEditSelection{background:rgba(33,133,231,.3)}",
+    "body.darkMode .linkEditSelection{background:rgba(33,133,231,.25)}",
     "en-note.peso{background-color:var(--color-background-fill-primary)}",
     "body.darkMode en-note.peso{background-color:#262626;color:#e6e6e6}",
     ".formatted-highlight{background-color:#ff0}",
@@ -340,6 +344,20 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedEditorCss,
       /--color-background-fill-primary:#000\s+;/,
     );
+    assert.match(patchedEditorCss, /body ::selection\{background:rgba\(33,133,231,\.4\)\}/);
+    assert.match(
+      patchedEditorCss,
+      /body\.darkMode ::selection\{background:rgba\(33,133,231,\.4\)\s+\}/,
+    );
+    assert.match(
+      patchedEditorCss,
+      /\.linkEditSelection\{background:rgba\(33,133,231,\.4\)\}/,
+    );
+    assert.match(
+      patchedEditorCss,
+      /body\.darkMode \.linkEditSelection\{background:rgba\(33,133,231,\.4\)\s+\}/,
+    );
+    assert.doesNotMatch(patchedEditorCss, /rgba\(33,133,231,\.(?:25|3)\)/);
     assert.match(patchedEditorCss, /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/);
     assert.match(
       patchedEditorCss,

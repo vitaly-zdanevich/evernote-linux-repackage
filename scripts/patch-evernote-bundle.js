@@ -282,6 +282,12 @@ const BLACK_EDITOR_HARDCODED_BACKGROUND_PATTERN =
   /background(?:-color)?:#262626/g;
 const BLACK_EDITOR_HARDCODED_ALREADY_PATCHED_PATTERN =
   /background(?:-color)?:#000\s*(?=;)/g;
+const EDITOR_SELECTION_BACKGROUND_FILE_PATTERN =
+  /^(?:ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+const EDITOR_SELECTION_BACKGROUND_PATTERN =
+  /rgba\(33,133,231,\.(?:25|3)\)/g;
+const EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN =
+  /rgba\(33,133,231,\.4\)\s*/g;
 const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
 const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
   /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
@@ -437,6 +443,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       return `${prefix}#000${" ".repeat(match.length - prefix.length - 4)}`;
     },
     alreadyPatchedPattern: BLACK_EDITOR_HARDCODED_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "brighterEditorTextSelection",
+    description: "brightened note editor text selection overlays",
+    filePattern: EDITOR_SELECTION_BACKGROUND_FILE_PATTERN,
+    pattern: EDITOR_SELECTION_BACKGROUND_PATTERN,
+    replacementForMatch: (match) => sameLengthReplacement(match, "rgba(33,133,231,.4)"),
+    alreadyPatchedPattern: EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
   {
