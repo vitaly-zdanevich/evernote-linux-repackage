@@ -22,6 +22,19 @@ Evernote's bundled auto-updater and in-app force-update checks are disabled by t
 
 If you use Evernote on Linux, consider writing to Evernote and asking for an official Linux desktop client. This project is also a practical confirmation that the current Electron-based desktop app can run on Linux with Linux-native Electron and rebuilt native modules.
 
+## Differences From Evernote Web
+
+This project runs Evernote's desktop client code, so it can expose desktop-only or desktop-first workflows that are missing or less complete in Evernote Web:
+
+- Offline/local database support. The desktop app stores synced notes and notebooks in a local database for offline access. This Linux repackage uses the same Conduit/SQLite desktop storage layer, but attachments are still lazy-loaded in practice and should not be assumed to be fully downloaded ahead of time. See [offline notes](https://help.evernote.com/hc/en-us/articles/209005917-Access-notes-offline).
+- ENEX/HTML export. Note and notebook export is a desktop-app feature, not an Evernote Web feature. See [Export Notes and Notebooks as ENEX or HTML](https://help.evernote.com/hc/en-us/articles/209005557-Export-Notes-and-Notebooks-as-ENEX-or-HTML).
+- ENEX import and file import workflows. ENEX import is handled by the desktop app; Evernote Web does not provide the same ENEX restore workflow. Desktop file import also supports content from other apps. See [How To: Import Notes and Notebooks](https://help.evernote.com/hc/en-us/articles/360035153274-How-To-Import-Notes-and-Notebooks) and [Import content from other apps into Evernote](https://help.evernote.com/hc/en-us/articles/208314308-Import-content-from-other-apps-into-Evernote).
+- Sync folders. The desktop app can watch local folders and automatically import files placed there. See [Sync your local folders](https://help.evernote.com/hc/en-us/articles/209004967-Sync-your-local-folders-former-Import-Folder-feature).
+- Desktop keyboard shortcuts. The desktop app has a full shortcut set. Evernote Web can be helped with a userscript such as [evernote/hotkey](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/hotkey), but this repackage uses the desktop shortcut surface. See [Keyboard shortcuts](https://help.evernote.com/hc/en-us/articles/34296687388307-Keyboard-shortcuts).
+- Right-click context menus. Desktop workflows use native-style context menus for actions such as export, encrypted text actions, shortcuts, and tab controls.
+- Encrypted text workflow from the desktop context menu. This is not strictly desktop-only because Evernote Web also supports encrypting selected text with shortcuts, but the desktop app exposes the documented right-click workflow. Evernote only encrypts selected text, not whole notes or notebooks. See [Encrypt text in a note](https://help.evernote.com/hc/en-us/articles/209005547-Encrypt-text-in-a-note).
+- Black minimal theme integrated, similar to https://gitlab.com/vitaly-zdanevich-styles/evernote
+
 ## Requirements
 
 - Linux x86_64 or arm64
