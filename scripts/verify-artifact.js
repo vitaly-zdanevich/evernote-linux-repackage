@@ -220,6 +220,8 @@ function verifyFlacMimePatch(asarPath) {
   const oldMime = "audio/x-flac";
   const newMime = "audio/flac  ";
   const proxyMarker = String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`;
+  const cachedResourceMarker = "normalizeFlacMime(resource.meta.mime)";
+  const audioPlayerMarker = String.raw`/^audio\/x-flac\b/i.test(e)?"audio/flac":r[e]||e`;
   const oldMimeFiles = [];
   let newMimeCount = 0;
 
@@ -244,13 +246,18 @@ function verifyFlacMimePatch(asarPath) {
   if (newMimeCount === 0) {
     throw new Error("Missing normalized FLAC MIME type marker in ASAR runtime entries.");
   }
-  if (
-    !readAsarText(
-      asarPath,
-      "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
-    ).includes(proxyMarker)
-  ) {
+  const resourceProxyJs = readAsarText(
+    asarPath,
+    "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+  );
+  if (!resourceProxyJs.includes(proxyMarker)) {
     throw new Error("Missing FLAC MIME normalization in MainResourceProxy response metadata.");
+  }
+  if (!resourceProxyJs.includes(cachedResourceMarker)) {
+    throw new Error("Missing FLAC MIME normalization when serving cached resources.");
+  }
+  if (!readAsarText(asarPath, "172.js").includes(audioPlayerMarker)) {
+    throw new Error("Missing FLAC MIME normalization before renderer audio playback.");
   }
 
   process.stdout.write(`Verified FLAC MIME type normalization in ${newMimeCount} runtime entry occurrence(s).\n`);

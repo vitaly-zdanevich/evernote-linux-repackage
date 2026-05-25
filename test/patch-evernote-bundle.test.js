@@ -95,7 +95,32 @@ function makePatchableMainJs() {
 }
 
 function makePatchableMainResourceProxyJs() {
-  return `function extractMetadataFromHeaders(headers) {
+  return `function handleResourceRequest(request, callback) {
+    getResource(request.url)
+        .then(resource => {
+        callback({
+            statusCode: 200,
+            headers: {
+                'Content-Type': resource.meta.mime,
+            },
+            data: resource.stream,
+        });
+    })
+        .catch(err => {
+        var _a, _b;
+        conduit_utils_1.logger.warn('ResourceProxy request failure', { url: request.url, err });
+        const data = new stream_1.Readable();
+        data._read = () => undefined;
+        data.push((_b = (_a = err.stack) !== null && _a !== void 0 ? _a : err.message) !== null && _b !== void 0 ? _b : (0, conduit_utils_1.safeStringify)(err));
+        data.push(null);
+        callback({
+            statusCode: typeof err === 'number' ? err : 500,
+            headers: {},
+            data,
+        });
+    });
+}
+function extractMetadataFromHeaders(headers) {
     var _a, _b, _c, _d;
     // Ref https://nodejs.org/api/http.html#http_message_headers certain headers are type \`string[]\` while others are \`string\`
     const mime = ((_a = headers['content-type']) !== null && _a !== void 0 ? _a : '');
@@ -109,6 +134,10 @@ function makePatchableMainResourceProxyJs() {
 `;
 }
 
+function makePatchableAudioPlayerChunkJs() {
+  return `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e}`;
+}
+
 test("patchEvernoteBundle applies Linux port patches in-place", () => {
   const tempDir = makeTempDir();
   try {
@@ -117,6 +146,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
 
     writeMinimalAsar(asarPath, {
       "main.js": mainJs,
+      "172.js": makePatchableAudioPlayerChunkJs(),
       "node_modules/en-conduit-electron/dist/MainResourceProxy.js":
         makePatchableMainResourceProxyJs(),
     });
@@ -174,8 +204,22 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
         String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`,
       ),
     );
+    assert.match(patchedMainResourceProxyJs, /function normalizeFlacMime/);
+    assert.match(
+      patchedMainResourceProxyJs,
+      /"Content-Type":normalizeFlacMime\(resource\.meta\.mime\)/,
+    );
+    const patchedAudioPlayerChunkJs = readMinimalAsarEntry(asarPath, "172.js");
+    assert.match(
+      patchedAudioPlayerChunkJs,
+      /\/\^audio\\\/x-flac\\b\/i\.test\(e\)\?"audio\/flac":r\[e\]\|\|e/,
+    );
+    assert.match(patchedAudioPlayerChunkJs, /n\.onerror=r/);
+    assert.doesNotMatch(patchedAudioPlayerChunkJs, /return r\[e\]\|\|e/);
     assert.doesNotMatch(patchedMainResourceProxyJs, /headers\['content-type'\]\) !== null/);
+    assert.doesNotMatch(patchedMainResourceProxyJs, /'Content-Type': resource\.meta\.mime/);
     assert.doesNotThrow(() => new Function(patchedMainResourceProxyJs));
+    assert.doesNotThrow(() => new Function(patchedAudioPlayerChunkJs));
 
     const secondPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {
