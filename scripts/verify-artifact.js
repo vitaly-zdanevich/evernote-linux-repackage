@@ -114,6 +114,15 @@ function readAsarText(asarPath, filePath) {
   return buffer.subarray(offset, offset + Number(entry.size)).toString();
 }
 
+function readAsarEntryText(asarPath, parsedAsar, filePath, entry) {
+  if (entry.unpacked) {
+    return fs.readFileSync(`${asarPath}.unpacked/${filePath}`, "utf8");
+  }
+
+  const offset = parsedAsar.baseOffset + Number(entry.offset);
+  return parsedAsar.buffer.subarray(offset, offset + Number(entry.size)).toString();
+}
+
 function walkAsarEntries(entry, callback, filePath = "") {
   for (const [name, child] of Object.entries(entry.files || {})) {
     const childPath = filePath ? `${filePath}/${name}` : name;
@@ -214,6 +223,56 @@ function verifyBundlePatches(asarPath) {
   process.stdout.write("Verified app.asar patch markers and main.js syntax.\n");
 }
 
+function assertJavaScriptSyntax(filePath, text) {
+  try {
+    new Function(text);
+  } catch (error) {
+    throw new Error(`Invalid JavaScript in patched ASAR entry ${filePath}: ${error.message}`);
+  }
+}
+
+function verifyPatchedJavaScriptSyntax(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const checkedFiles = [];
+  const requiredFiles = [
+    "main.js",
+    "172.js",
+    "7839.js",
+    "8634.js",
+    "2002.js",
+    "3014.js",
+    "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+  ];
+  const syntaxCheckPatterns = [
+    /^main\.js$/,
+    /^172\.js$/,
+    /^7839\.js$/,
+    /^8634\.js$/,
+    /^2002\.js$/,
+    /^3014\.js$/,
+    /^4701\.js$/,
+    /^ce\/chunks\/9008\.[^/]+\.js$/,
+    /^node_modules\/@evernote\/common-editor\/chunks\/9008\.[^/]+\.js$/,
+    /^node_modules\/en-conduit-electron\/dist\/MainResourceProxy\.js$/,
+  ];
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (!syntaxCheckPatterns.some((pattern) => pattern.test(filePath))) {
+      return;
+    }
+
+    assertJavaScriptSyntax(filePath, readAsarEntryText(asarPath, parsedAsar, filePath, entry));
+    checkedFiles.push(filePath);
+  });
+
+  const missingRequiredFiles = requiredFiles.filter((filePath) => !checkedFiles.includes(filePath));
+  if (missingRequiredFiles.length > 0) {
+    throw new Error(`Required patched JavaScript entry missing: ${missingRequiredFiles.join(", ")}`);
+  }
+
+  process.stdout.write(`Verified patched JavaScript syntax in ${checkedFiles.length} ASAR entry(s).\n`);
+}
+
 function verifyFlacMimePatch(asarPath) {
   const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
   const runtimeFilePattern = /\.(?:js|json|html)$/i;
@@ -263,6 +322,107 @@ function verifyFlacMimePatch(asarPath) {
   process.stdout.write(`Verified FLAC MIME type normalization in ${newMimeCount} runtime entry occurrence(s).\n`);
 }
 
+function verifyAiCopilotDisclaimerPatch(asarPath) {
+  const aiCopilotRuntime = readAsarText(asarPath, "172.js");
+  if (aiCopilotRuntime.includes("disclaimer:{text:Ut()}")) {
+    throw new Error("Unpatched AI Assistant composer disclaimer config remains.");
+  }
+  if (!aiCopilotRuntime.includes("disclaimer:void 0")) {
+    throw new Error("Missing disabled AI Assistant composer disclaimer marker.");
+  }
+
+  process.stdout.write("Verified AI Assistant composer disclaimer is disabled.\n");
+}
+
+function verifyBlackBackgroundThemePatch(asarPath) {
+  const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
+  const appTheme = readAsarText(asarPath, "7839.js");
+  if (!appTheme.includes("--color-background-base-fill-primary:#000")) {
+    throw new Error("Missing black app background theme token patch.");
+  }
+  if (/--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/.test(appTheme)) {
+    throw new Error("Unpatched app background theme token remains.");
+  }
+  if (!appTheme.includes("--color-note_list-base-stroke-enabled:#000")) {
+    throw new Error("Missing black note list stroke theme token patch.");
+  }
+
+  let editorBackgroundTokenPatched = false;
+  let editorDarkBackgroundPatched = false;
+  let editorFormattingBackgroundPreserved = false;
+
+  walkAsarEntries(header, (filePath, entry) => {
+    if (
+      entry.unpacked ||
+      !/^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/.test(filePath)
+    ) {
+      return;
+    }
+
+    const offset = baseOffset + Number(entry.offset);
+    const text = buffer.subarray(offset, offset + Number(entry.size)).toString();
+    editorBackgroundTokenPatched ||= text.includes("--color-background-fill-primary:#000");
+    editorDarkBackgroundPatched ||= text.includes("body.darkMode en-note.peso{background-color:#000");
+    editorFormattingBackgroundPreserved ||= text.includes("background-color:var(--color-surface-fill-tertiary-enabled)");
+  });
+
+  if (!editorBackgroundTokenPatched) {
+    throw new Error("Missing black editor background theme token patch.");
+  }
+  if (!editorDarkBackgroundPatched) {
+    throw new Error("Missing black dark-mode note background patch.");
+  }
+  if (!editorFormattingBackgroundPreserved) {
+    throw new Error("Editor formatting background token was not preserved.");
+  }
+
+  process.stdout.write("Verified black background theme patches.\n");
+}
+
+function verifyCollapsedNavWidthPatch(asarPath) {
+  const navRuntime = readAsarText(asarPath, "8634.js");
+  if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
+    throw new Error("Unpatched collapsed sidebar width remains.");
+  }
+  if (!navRuntime.includes("Q=Ia.WB,X=Math.max(Math.min(Ia.af,q),Q)")) {
+    throw new Error("Missing minimized collapsed sidebar width marker.");
+  }
+
+  process.stdout.write("Verified collapsed sidebar uses minimum icon rail width.\n");
+}
+
+function verifyCollapsedNavSpacingPatch(asarPath) {
+  const navStylesRuntime = readAsarText(asarPath, "2002.js");
+  const oldPaddingToken = "--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);";
+  const newPaddingToken = "--nav-collapsed-padding:var(--spacing-1-5)var(--spacing-2);";
+  const oldItemPadding = "padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;";
+  const newItemPadding = "padding:var(--spacing-1-5)var(--spacing-2);justify-content:center;";
+
+  if (navStylesRuntime.includes(oldPaddingToken) || navStylesRuntime.includes(oldItemPadding)) {
+    throw new Error("Unpatched collapsed sidebar icon spacing remains.");
+  }
+  if (!navStylesRuntime.includes(newPaddingToken) || !navStylesRuntime.includes(newItemPadding)) {
+    throw new Error("Missing increased collapsed sidebar icon spacing marker.");
+  }
+
+  process.stdout.write("Verified collapsed sidebar icon rail vertical spacing.\n");
+}
+
+function verifyNoteSnippetSeparatorsPatch(asarPath) {
+  const noteListRuntime = readAsarText(asarPath, "3014.js");
+  const oldSeparator = "--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);";
+  const newSeparator = "--noteSnippet-border-bottom:0px solid transparent";
+
+  if (noteListRuntime.includes(oldSeparator)) {
+    throw new Error("Unpatched note snippet separator line remains.");
+  }
+  if (!noteListRuntime.includes(newSeparator)) {
+    throw new Error("Missing removed note snippet separator marker.");
+  }
+
+  process.stdout.write("Verified note snippet separator lines are removed.\n");
+}
+
 function verifyArtifact(options) {
   const portDir = path.resolve(options.portDir);
   const asarPath = path.join(portDir, "resources", "app.asar");
@@ -275,7 +435,13 @@ function verifyArtifact(options) {
 
   verifyNativeModules(portDir);
   verifyBundlePatches(asarPath);
+  verifyPatchedJavaScriptSyntax(asarPath);
   verifyFlacMimePatch(asarPath);
+  verifyAiCopilotDisclaimerPatch(asarPath);
+  verifyBlackBackgroundThemePatch(asarPath);
+  verifyCollapsedNavWidthPatch(asarPath);
+  verifyCollapsedNavSpacingPatch(asarPath);
+  verifyNoteSnippetSeparatorsPatch(asarPath);
 
   process.stdout.write(`Artifact verification passed: ${portDir}\n`);
 }

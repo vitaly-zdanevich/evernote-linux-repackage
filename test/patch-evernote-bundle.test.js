@@ -135,7 +135,77 @@ function extractMetadataFromHeaders(headers) {
 }
 
 function makePatchableAudioPlayerChunkJs() {
-  return `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e}`;
+  return `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e};function Ut(){return"Evernote AI Assistant can make mistakes."}const R={api:{},disclaimer:{text:Ut()},initialThread:null};`;
+}
+
+function makePatchableAppThemeChunkJs() {
+  const runtimeCss = [
+    ":root,[data-color-theme=light]{",
+    "--color-background-base-fill-primary:var(--colors-grey-100);",
+    "--color-background-base-fill-secondary:var(--colors-grey-99);",
+    "--color-surface-fill-primary-enabled:var(--colors-grey-100);",
+    "--color-card-base-fill-enabled:var(--colors-grey-100);",
+    "--color-button-base-fill-primary-default:var(--colors-secondary-blue-400);",
+    "--color-note_list-base-stroke-enabled:var(--colors-grey-90);",
+    "--color-text-fill-primary-enabled:var(--colors-grey-8);",
+    "--home-widget-pp-background-z-index:-1;",
+    "}[data-color-theme=dark]{",
+    "--color-background-base-fill-primary:var(--colors-grey-8);",
+    "--color-surface-fill-primary-enabled:var(--colors-grey-8);",
+    "--color-iconbutton-base-fill-primary-hover:var(--colors-grey-opacitywhite08);",
+    "--color-text-fill-primary-enabled:var(--colors-grey-100);",
+    "}",
+  ].join("");
+  const sourceContent = [
+    ".source-theme{",
+    "--color-calendar_block-highlight-fill-task-enabled:var(--colors-secondary-purple-300);",
+    "}",
+  ].join("");
+
+  return [
+    "(()=>{",
+    "const A={push(){},locals:{}};",
+    "const o={id:7839};",
+    `A.push([o.id,${JSON.stringify(runtimeCss)},"",{version:3,sources:["webpack://theme.css"],sourcesContent:[${JSON.stringify(sourceContent)}],sourceRoot:""}]);`,
+    "})();",
+  ].join("");
+}
+
+function makePatchableEditorCss() {
+  return [
+    "body{",
+    "--color-background-fill-primary:var(--colors-grey-100);",
+    "--color-background-fill-secondary:var(--colors-grey-97);",
+    "--color-surface-fill-tertiary-enabled:var(--colors-grey-95);",
+    "}",
+    "en-note.peso{background-color:var(--color-background-fill-primary)}",
+    "body.darkMode en-note.peso{background-color:#262626;color:#e6e6e6}",
+    ".formatted-highlight{background-color:#ff0}",
+  ].join("");
+}
+
+function makePatchableMainNavChunkJs() {
+  return "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}";
+}
+
+function makePatchableNavStylesChunkJs() {
+  return [
+    "(()=>{",
+    'const css=":root{--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);}',
+    '.collapsedItem{padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;}";',
+    "void css;",
+    "})();",
+  ].join("");
+}
+
+function makePatchableNoteListStylesChunkJs() {
+  return [
+    "(()=>{",
+    'const css=":root{--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);}',
+    '.NoteSnippet{border-bottom:var(--noteSnippet-border-bottom);}";',
+    "void css;",
+    "})();",
+  ].join("");
 }
 
 test("patchEvernoteBundle applies Linux port patches in-place", () => {
@@ -147,6 +217,12 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     writeMinimalAsar(asarPath, {
       "main.js": mainJs,
       "172.js": makePatchableAudioPlayerChunkJs(),
+      "7839.js": makePatchableAppThemeChunkJs(),
+      "8634.js": makePatchableMainNavChunkJs(),
+      "2002.js": makePatchableNavStylesChunkJs(),
+      "3014.js": makePatchableNoteListStylesChunkJs(),
+      "ce/ce-test.css": makePatchableEditorCss(),
+      "node_modules/@evernote/common-editor/headless.css": makePatchableEditorCss(),
       "node_modules/en-conduit-electron/dist/MainResourceProxy.js":
         makePatchableMainResourceProxyJs(),
     });
@@ -216,10 +292,85 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     );
     assert.match(patchedAudioPlayerChunkJs, /n\.onerror=r/);
     assert.doesNotMatch(patchedAudioPlayerChunkJs, /return r\[e\]\|\|e/);
+    assert.match(patchedAudioPlayerChunkJs, /disclaimer:void 0\s+,initialThread:null/);
+    assert.doesNotMatch(patchedAudioPlayerChunkJs, /disclaimer:\{text:Ut\(\)\}/);
     assert.doesNotMatch(patchedMainResourceProxyJs, /headers\['content-type'\]\) !== null/);
     assert.doesNotMatch(patchedMainResourceProxyJs, /'Content-Type': resource\.meta\.mime/);
     assert.doesNotThrow(() => new Function(patchedMainResourceProxyJs));
     assert.doesNotThrow(() => new Function(patchedAudioPlayerChunkJs));
+    const patchedAppThemeChunkJs = readMinimalAsarEntry(asarPath, "7839.js");
+    assert.match(
+      patchedAppThemeChunkJs,
+      /--color-background-base-fill-primary:#000\s+;/,
+    );
+    assert.match(
+      patchedAppThemeChunkJs,
+      /--color-surface-fill-primary-enabled:#000\s+;/,
+    );
+    assert.match(
+      patchedAppThemeChunkJs,
+      /--color-button-base-fill-primary-default:#000\s+;/,
+    );
+    assert.match(
+      patchedAppThemeChunkJs,
+      /--color-note_list-base-stroke-enabled:#000\s+;/,
+    );
+    assert.match(
+      patchedAppThemeChunkJs,
+      /--color-text-fill-primary-enabled:var\(--colors-grey-8\);/,
+    );
+    assert.match(patchedAppThemeChunkJs, /--home-widget-pp-background-z-index:-1;/);
+    assert.match(
+      patchedAppThemeChunkJs,
+      /sourcesContent:\["\.source-theme\{--color-calendar_block-highlight-fill-task-enabled:var\(--colors-secondary-purple-300\);\}"\]/,
+    );
+    assert.doesNotMatch(
+      patchedAppThemeChunkJs,
+      /--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/,
+    );
+    assert.doesNotThrow(() => new Function(patchedAppThemeChunkJs));
+    const patchedEditorCss = readMinimalAsarEntry(asarPath, "ce/ce-test.css");
+    assert.match(
+      patchedEditorCss,
+      /--color-background-fill-primary:#000\s+;/,
+    );
+    assert.match(patchedEditorCss, /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/);
+    assert.match(
+      patchedEditorCss,
+      /--color-surface-fill-tertiary-enabled:var\(--colors-grey-95\);/,
+    );
+    assert.match(patchedEditorCss, /\.formatted-highlight\{background-color:#ff0\}/);
+    const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, "8634.js");
+    assert.match(
+      patchedMainNavChunkJs,
+      /Q=Ia\.WB,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
+    );
+    assert.doesNotMatch(
+      patchedMainNavChunkJs,
+      /Q=Ia\.V0,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
+    );
+    assert.doesNotThrow(() => new Function(patchedMainNavChunkJs));
+    const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");
+    assert.match(
+      patchedNavStylesChunkJs,
+      /--nav-collapsed-padding:var\(--spacing-1-5\)var\(--spacing-2\);/,
+    );
+    assert.match(
+      patchedNavStylesChunkJs,
+      /padding:var\(--spacing-1-5\)var\(--spacing-2\);justify-content:center;/,
+    );
+    assert.doesNotMatch(patchedNavStylesChunkJs, /spacing-0-5/);
+    assert.doesNotThrow(() => new Function(patchedNavStylesChunkJs));
+    const patchedNoteListStylesChunkJs = readMinimalAsarEntry(asarPath, "3014.js");
+    assert.match(
+      patchedNoteListStylesChunkJs,
+      /--noteSnippet-border-bottom:0px solid transparent;\s+/,
+    );
+    assert.doesNotMatch(
+      patchedNoteListStylesChunkJs,
+      /--noteSnippet-border-bottom:1px solid var\(--color-snippet-base-stroke-enabled\);/,
+    );
+    assert.doesNotThrow(() => new Function(patchedNoteListStylesChunkJs));
 
     const secondPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {
