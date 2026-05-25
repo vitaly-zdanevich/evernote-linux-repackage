@@ -30,12 +30,11 @@ docker run --rm \
   -e EVERNOTE_CONTAINER_APPIMAGE="/workspace/$appimage" \
   -v "$PWD:/workspace:ro" \
   -w /workspace \
-  ubuntu:24.04 \
+  node:24-bookworm-slim \
   bash -euo pipefail -c '
     apt-get update
     apt-get install -y --no-install-recommends \
       ca-certificates \
-      nodejs \
       xvfb \
       xauth \
       libgtk-3-0 \
