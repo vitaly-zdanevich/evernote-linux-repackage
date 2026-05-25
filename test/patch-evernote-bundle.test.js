@@ -197,6 +197,15 @@ function makePatchableTagSuggestionChunkJs() {
   ].join("");
 }
 
+function makePatchableDropdownItemChunkJs() {
+  return [
+    "(()=>{",
+    'const css=".dropItem{padding:var(--spacing-0);align-items:flex-start;gap:var(--spacing-0-25);border-radius:var(--radius-s);flex-direction:column;align-self:stretch;transition:scale .15s;display:flex}.dropItem:hover{background-color:var(--color-surface-fill-primary-hover)}.dropItem:active{scale:.99}.dropTitle{cursor:pointer;color:var(--color-text-fill-tertiary-enabled)}";',
+    "void css;",
+    "})();",
+  ].join("");
+}
+
 function makePatchableMainNavChunkJs() {
   return "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}";
 }
@@ -237,6 +246,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "172.js": makePatchableAudioPlayerChunkJs(),
       "7839.js": makePatchableAppThemeChunkJs(),
       "8078.js": makePatchableTagSuggestionChunkJs(),
+      "1957.js": makePatchableDropdownItemChunkJs(),
       "8634.js": makePatchableMainNavChunkJs(),
       "2002.js": makePatchableNavStylesChunkJs(),
       "8453.js": makePatchableNavConstantsChunkJs(),
@@ -389,6 +399,16 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     );
     assert.doesNotMatch(patchedTagSuggestionChunkJs, /transition-duration:\.1s/);
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
+    const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, "1957.js");
+    assert.match(
+      patchedDropdownItemChunkJs,
+      /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}\.dropItem:hover\{background-color:#1f1f1f\s*\}\.dropItem:active\{scale:\.99\}/,
+    );
+    assert.doesNotMatch(
+      patchedDropdownItemChunkJs,
+      /\.dropItem:hover\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
+    );
+    assert.doesNotThrow(() => new Function(patchedDropdownItemChunkJs));
     const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, "8634.js");
     assert.match(
       patchedMainNavChunkJs,

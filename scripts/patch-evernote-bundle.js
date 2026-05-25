@@ -296,6 +296,10 @@ const TAG_SUGGESTION_HOVER_TRANSITION_PATTERN =
   /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/g;
 const TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN =
   /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/g;
+const DROPDOWN_ITEM_HOVER_PATTERN =
+  /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/g;
+const DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN =
+  /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:#1f1f1f\s*\}\1:active\{scale:\.99\}/g;
 const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
 const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
   /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
@@ -486,6 +490,22 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
         "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:0s ;transition-timing-function:ease-in-out",
       ),
     alreadyPatchedPattern: TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "visibleDropdownItemHover",
+    description: "made dropdown menu item hover background visible on black theme",
+    filePattern: /^1957\.js$/,
+    pattern: DROPDOWN_ITEM_HOVER_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        match.replace(
+          "background-color:var(--color-surface-fill-primary-hover)",
+          "background-color:#1f1f1f",
+        ),
+      ),
+    alreadyPatchedPattern: DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
   {

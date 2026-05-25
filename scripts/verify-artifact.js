@@ -238,6 +238,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     "main.js",
     "172.js",
     "7839.js",
+    "1957.js",
     "8634.js",
     "2002.js",
     "8453.js",
@@ -248,6 +249,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     /^main\.js$/,
     /^172\.js$/,
     /^7839\.js$/,
+    /^1957\.js$/,
     /^8634\.js$/,
     /^2002\.js$/,
     /^8453\.js$/,
@@ -471,6 +473,29 @@ function verifyTagSuggestionHoverPatch(asarPath) {
   process.stdout.write("Verified tag suggestion hover background is visible and instant on black theme.\n");
 }
 
+function verifyDropdownItemHoverPatch(asarPath) {
+  const dropdownItemRuntime = readAsarText(asarPath, "1957.js");
+  const stalePattern =
+    /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/;
+  const patchedPattern =
+    /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:#1f1f1f\s*\}\1:active\{scale:\.99\}/;
+
+  if (stalePattern.test(dropdownItemRuntime)) {
+    throw new Error("Unpatched dropdown menu item hover background remains.");
+  }
+  if (!patchedPattern.test(dropdownItemRuntime)) {
+    throw new Error("Missing visible dropdown menu item hover background marker.");
+  }
+  if (!dropdownItemRuntime.includes("components/DropdownItem/styles.css")) {
+    throw new Error("DropdownItem stylesheet marker is missing.");
+  }
+  if (!readAsarText(asarPath, "172.js").includes("Action.note.openInLiteEditor")) {
+    throw new Error("Note actions dropdown marker is missing.");
+  }
+
+  process.stdout.write("Verified dropdown menu item hover background is visible on black theme.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -568,6 +593,7 @@ function verifyArtifact(options) {
   verifyBlackBackgroundThemePatch(asarPath);
   verifyEditorTextSelectionPatch(asarPath);
   verifyTagSuggestionHoverPatch(asarPath);
+  verifyDropdownItemHoverPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);
