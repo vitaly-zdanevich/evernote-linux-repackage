@@ -32,6 +32,7 @@ If you use Evernote on Linux, consider writing to Evernote and asking for an off
 - C/C++ build tools: `gcc`, `g++`, `make`
 - `pkg-config`
 - libsecret development headers, for building `keytar`
+- A desktop Secret Service provider, such as GNOME Keyring or KWallet, for persistent login tokens
 
 On Debian/Ubuntu-like systems the native build prerequisites are typically:
 
@@ -187,6 +188,34 @@ The GitHub Actions workflow has two build jobs:
 Both build jobs compile native modules, run the smoke test on the unpacked bundle, build an AppImage, verify bundled AppImage runtime libraries, smoke-test that AppImage with `APPIMAGE_EXTRACT_AND_RUN=1`, run an x86_64 clean-container smoke test without host `libsecret`, write `dist/SHA256SUMS`, and upload architecture-specific artifacts for x86_64 and aarch64.
 
 Tag workflows also run a GitHub `release` job. It publishes the pinned x86_64 and aarch64 AppImages, per-architecture `build-info-*.json` files, `SHA256SUMS`, release notes with the unofficial/proprietary redistribution warning, and GitHub artifact attestations.
+
+## Troubleshooting
+
+### Login Is Not Remembered
+
+If Evernote asks you to log in again after restarting the app, the note database is usually not the problem. Account tokens are stored through `keytar`, which uses the Linux Secret Service/libsecret stack. The AppImage bundles `libsecret-1.so.0`, but the desktop must still provide and unlock a user keyring.
+
+Check the basics:
+
+```bash
+printf '%s\n' "$DBUS_SESSION_BUS_ADDRESS"
+busctl --user status org.freedesktop.secrets
+```
+
+If `DBUS_SESSION_BUS_ADDRESS` is empty, the app was not started inside a normal user desktop session. If `org.freedesktop.secrets` is missing or the command fails, install/start a Secret Service provider such as GNOME Keyring or KWallet.
+
+You can also test secret storage with `secret-tool` when it is available:
+
+```bash
+secret-tool store --label='Evernote Linux test' app evernote-linux-repackage test login
+secret-tool lookup app evernote-linux-repackage test login
+```
+
+The second command should print the stored value after the keyring is unlocked. If it cannot store or read the value, Evernote login tokens will not persist either.
+
+Repeated "Unlock Keyring" prompts usually mean the desktop keyring is locked, not unlocked automatically by PAM/login, or was created with a different password than the user login password. Fix that in the desktop keyring manager before debugging the Evernote profile.
+
+Do not run the AppImage with `sudo`, from a service, or from a different user account. That creates or reads a different DBus/keyring session and can make Evernote behave as if no token exists.
 
 ## Storage Notes
 
