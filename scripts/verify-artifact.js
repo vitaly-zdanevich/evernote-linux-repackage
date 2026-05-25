@@ -238,6 +238,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     "main.js",
     "172.js",
     "7839.js",
+    "4701.js",
     "1957.js",
     "8634.js",
     "2002.js",
@@ -496,6 +497,54 @@ function verifyDropdownItemHoverPatch(asarPath) {
   process.stdout.write("Verified dropdown menu item hover background is visible on black theme.\n");
 }
 
+function verifySourceUrlPillWidthPatch(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const sourceUrlFilePattern =
+    /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+  const staleContainerPattern =
+    /\.SiiOu\{[^}]*?max-width:375px|body\.neutron \.SiiOu\{[^}]*?max-width:165px/;
+  const staleTextPattern =
+    /\.yjBnv\{line-height:18px;max-width:187\.5px|body\.neutron \.yjBnv\{max-width:106\.5px\}/;
+  const patchedContainerPattern =
+    /\.SiiOu\{[^}]*?max-width:none\s*;[^}]*\}\.SiiOu,body\.neutron \.SiiOu\{[^}]*\}(?:body\.neutron \.SiiOu\{[^}]*\})?body\.neutron \.SiiOu\{[^}]*?max-width:none\s*;/;
+  const patchedTextPattern =
+    /\.yjBnv\{line-height:18px;max-width:none\s*;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}body\.neutron \.yjBnv\{max-width:none\s*\}/;
+  const staleFiles = [];
+  const patchedContainerFiles = [];
+  const patchedTextFiles = [];
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !sourceUrlFilePattern.test(filePath)) {
+      return;
+    }
+
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (staleContainerPattern.test(text) || staleTextPattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedContainerPattern.test(text)) {
+      patchedContainerFiles.push(filePath);
+    }
+    if (patchedTextPattern.test(text)) {
+      patchedTextFiles.push(filePath);
+    }
+  });
+
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched source URL pill width limit remains in ${staleFiles.join(", ")}.`);
+  }
+  if (patchedContainerFiles.length < 4) {
+    throw new Error(
+      `Missing source URL chip container width marker; found ${patchedContainerFiles.length}.`,
+    );
+  }
+  if (patchedTextFiles.length < 4) {
+    throw new Error(`Missing source URL text width marker; found ${patchedTextFiles.length}.`);
+  }
+
+  process.stdout.write("Verified source URL pill can use the available note header width.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -594,6 +643,7 @@ function verifyArtifact(options) {
   verifyEditorTextSelectionPatch(asarPath);
   verifyTagSuggestionHoverPatch(asarPath);
   verifyDropdownItemHoverPatch(asarPath);
+  verifySourceUrlPillWidthPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);

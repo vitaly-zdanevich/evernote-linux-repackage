@@ -206,6 +206,27 @@ function makePatchableDropdownItemChunkJs() {
   ].join("");
 }
 
+function makePatchableSourceUrlPillChunkJs() {
+  const css = [
+    ".SiiOu{align-items:center;background-color:var(--color-filterpill-base-fill-default);border:2px solid transparent;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;font-weight:400;max-width:375px;padding:0 6px;text-align:center}",
+    ".SiiOu,body.neutron .SiiOu{font-size:14px;line-height:18px}",
+    "body.neutron .SiiOu{font-size:13px;height:28px;line-height:30px}",
+    "body.neutron .SiiOu{border-radius:var(--radius-sm);margin:0 6px 0 0;max-width:165px;padding:0 5px 0 2px}",
+    ".klJtG{background-color:#f2f2f2;color:#4d4d4d}",
+    "body.neutron .klJtG{padding:var(--spacing-0)}",
+    "body.darkMode .klJtG{background-color:#404040;color:#d9d9d9}",
+    ".yjBnv{line-height:18px;max-width:187.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+    "body.neutron .yjBnv{max-width:106.5px}",
+  ].join("");
+
+  return [
+    "(()=>{",
+    `const css=${JSON.stringify(css)};`,
+    "void css;",
+    "})();",
+  ].join("");
+}
+
 function makePatchableMainNavChunkJs() {
   return "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}";
 }
@@ -245,6 +266,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "main.js": mainJs,
       "172.js": makePatchableAudioPlayerChunkJs(),
       "7839.js": makePatchableAppThemeChunkJs(),
+      "4701.js": makePatchableSourceUrlPillChunkJs(),
       "8078.js": makePatchableTagSuggestionChunkJs(),
       "1957.js": makePatchableDropdownItemChunkJs(),
       "8634.js": makePatchableMainNavChunkJs(),
@@ -409,6 +431,20 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /\.dropItem:hover\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
     );
     assert.doesNotThrow(() => new Function(patchedDropdownItemChunkJs));
+    const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, "4701.js");
+    assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 6px/);
+    assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 5px 0 2px/);
+    assert.match(
+      patchedSourceUrlPillChunkJs,
+      /\.yjBnv\{line-height:18px;max-width:none\s*;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/,
+    );
+    assert.match(
+      patchedSourceUrlPillChunkJs,
+      /body\.neutron \.yjBnv\{max-width:none\s*\}/,
+    );
+    assert.doesNotMatch(patchedSourceUrlPillChunkJs, /max-width:375px|max-width:165px/);
+    assert.doesNotMatch(patchedSourceUrlPillChunkJs, /max-width:187\.5px|max-width:106\.5px/);
+    assert.doesNotThrow(() => new Function(patchedSourceUrlPillChunkJs));
     const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, "8634.js");
     assert.match(
       patchedMainNavChunkJs,

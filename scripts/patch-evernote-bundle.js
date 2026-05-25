@@ -300,6 +300,16 @@ const DROPDOWN_ITEM_HOVER_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/g;
 const DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:#1f1f1f\s*\}\1:active\{scale:\.99\}/g;
+const SOURCE_URL_PILL_WIDTH_FILE_PATTERN =
+  /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+const SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_PATTERN =
+  /(\.SiiOu\{[^}]*?)max-width:375px([^}]*\}\.SiiOu,body\.neutron \.SiiOu\{[^}]*\}(?:body\.neutron \.SiiOu\{[^}]*\})?body\.neutron \.SiiOu\{[^}]*?)max-width:165px/g;
+const SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_ALREADY_PATCHED_PATTERN =
+  /\.SiiOu\{[^}]*?max-width:none\s*;[^}]*\}\.SiiOu,body\.neutron \.SiiOu\{[^}]*\}(?:body\.neutron \.SiiOu\{[^}]*\})?body\.neutron \.SiiOu\{[^}]*?max-width:none\s*;/g;
+const SOURCE_URL_PILL_TEXT_MAX_WIDTH_PATTERN =
+  /(\.yjBnv\{line-height:18px;)max-width:187\.5px(;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}body\.neutron \.yjBnv\{)max-width:106\.5px(\})/g;
+const SOURCE_URL_PILL_TEXT_MAX_WIDTH_ALREADY_PATCHED_PATTERN =
+  /\.yjBnv\{line-height:18px;max-width:none\s*;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}body\.neutron \.yjBnv\{max-width:none\s*\}/g;
 const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
 const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
   /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
@@ -506,6 +516,36 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
         ),
       ),
     alreadyPatchedPattern: DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "expandedSourceUrlPillContainerWidth",
+    description: "removed source URL chip container width limit",
+    filePattern: SOURCE_URL_PILL_WIDTH_FILE_PATTERN,
+    pattern: SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        match
+          .replace("max-width:375px", "max-width:none ")
+          .replace("max-width:165px", "max-width:none "),
+      ),
+    alreadyPatchedPattern: SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "expandedSourceUrlTextWidth",
+    description: "removed source URL text width limit",
+    filePattern: SOURCE_URL_PILL_WIDTH_FILE_PATTERN,
+    pattern: SOURCE_URL_PILL_TEXT_MAX_WIDTH_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        match
+          .replace("max-width:187.5px", "max-width:none   ")
+          .replace("max-width:106.5px", "max-width:none   "),
+      ),
+    alreadyPatchedPattern: SOURCE_URL_PILL_TEXT_MAX_WIDTH_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
   {
