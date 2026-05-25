@@ -14,10 +14,10 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: "20"
+          node-version: "24"
       - run: npm run check
       - run: npm test
 
@@ -57,10 +57,10 @@ jobs:
       ELECTRON_EXPECTED_VERSION: "37.6.0"
       ELECTRON_SHA256: ${{ matrix.electron_sha256 }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -105,7 +105,7 @@ jobs:
           cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
           cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
           cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: evernote-linux-repackage-pinned-${{ matrix.appimage_arch }}-${{ github.sha }}
           if-no-files-found: error
@@ -140,10 +140,10 @@ jobs:
       TARGET_ARCH: ${{ matrix.target_arch }}
       APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: "20"
+          node-version: "24"
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -184,7 +184,7 @@ jobs:
           cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
           cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
           cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: evernote-linux-repackage-latest-${{ matrix.appimage_arch }}-${{ github.sha }}
           if-no-files-found: error
@@ -199,7 +199,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           pattern: evernote-linux-repackage-pinned-*
           merge-multiple: true
@@ -248,7 +248,7 @@ jobs:
           EOF
           } > RELEASE_NOTES.md
       - name: Generate artifact attestations
-        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4
         with:
           subject-path: release-assets/*
       - name: Publish GitHub release assets

@@ -25,7 +25,7 @@ If you use Evernote on Linux, consider writing to Evernote and asking for an off
 ## Requirements
 
 - Linux x86_64 or arm64
-- `node` and `npm`
+- Node.js 24 or newer, with npm 11 or newer
 - `curl`
 - `7z`
 - `unzip`
