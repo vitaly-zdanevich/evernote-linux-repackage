@@ -288,6 +288,14 @@ const EDITOR_SELECTION_BACKGROUND_PATTERN =
   /rgba\(33,133,231,\.(?:25|3)\)/g;
 const EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN =
   /rgba\(33,133,231,\.4\)\s*/g;
+const TAG_SUGGESTION_HOVER_PATTERN =
+  /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/g;
+const TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN =
+  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/g;
+const TAG_SUGGESTION_HOVER_TRANSITION_PATTERN =
+  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/g;
+const TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN =
+  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/g;
 const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
 const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
   /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
@@ -452,6 +460,32 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     pattern: EDITOR_SELECTION_BACKGROUND_PATTERN,
     replacementForMatch: (match) => sameLengthReplacement(match, "rgba(33,133,231,.4)"),
     alreadyPatchedPattern: EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "visibleTagSuggestionHover",
+    description: "made tag suggestion hover background visible on black theme",
+    filePattern: /\.js$/,
+    pattern: TAG_SUGGESTION_HOVER_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;",
+      ),
+    alreadyPatchedPattern: TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "instantTagSuggestionHover",
+    description: "removed tag suggestion hover transition delay",
+    filePattern: /\.js$/,
+    pattern: TAG_SUGGESTION_HOVER_TRANSITION_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:0s ;transition-timing-function:ease-in-out",
+      ),
+    alreadyPatchedPattern: TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
   {

@@ -188,6 +188,15 @@ function makePatchableEditorCss() {
   ].join("");
 }
 
+function makePatchableTagSuggestionChunkJs() {
+  return [
+    "(()=>{",
+    'const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";',
+    "void css;",
+    "})();",
+  ].join("");
+}
+
 function makePatchableMainNavChunkJs() {
   return "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}";
 }
@@ -227,6 +236,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "main.js": mainJs,
       "172.js": makePatchableAudioPlayerChunkJs(),
       "7839.js": makePatchableAppThemeChunkJs(),
+      "8078.js": makePatchableTagSuggestionChunkJs(),
       "8634.js": makePatchableMainNavChunkJs(),
       "2002.js": makePatchableNavStylesChunkJs(),
       "8453.js": makePatchableNavConstantsChunkJs(),
@@ -364,6 +374,21 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /--color-surface-fill-tertiary-enabled:var\(--colors-grey-95\);/,
     );
     assert.match(patchedEditorCss, /\.formatted-highlight\{background-color:#ff0\}/);
+    const patchedTagSuggestionChunkJs = readMinimalAsarEntry(asarPath, "8078.js");
+    assert.match(
+      patchedTagSuggestionChunkJs,
+      /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
+    );
+    assert.match(
+      patchedTagSuggestionChunkJs,
+      /transition-duration:0s\s*;transition-timing-function:ease-in-out/,
+    );
+    assert.doesNotMatch(
+      patchedTagSuggestionChunkJs,
+      /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
+    );
+    assert.doesNotMatch(patchedTagSuggestionChunkJs, /transition-duration:\.1s/);
+    assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
     const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, "8634.js");
     assert.match(
       patchedMainNavChunkJs,

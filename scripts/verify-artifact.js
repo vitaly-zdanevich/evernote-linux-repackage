@@ -419,6 +419,58 @@ function verifyEditorTextSelectionPatch(asarPath) {
   process.stdout.write("Verified editor text selection overlays are brighter.\n");
 }
 
+function verifyTagSuggestionHoverPatch(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const stalePattern =
+    /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/;
+  const patchedPattern =
+    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/;
+  const staleTransitionPattern =
+    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/;
+  const instantTransitionPattern =
+    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/;
+  const staleFiles = [];
+  const patchedFiles = [];
+  const staleTransitionFiles = [];
+  const instantTransitionFiles = [];
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !filePath.endsWith(".js")) {
+      return;
+    }
+
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (stalePattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedPattern.test(text)) {
+      patchedFiles.push(filePath);
+      assertJavaScriptSyntax(filePath, text);
+    }
+    if (staleTransitionPattern.test(text)) {
+      staleTransitionFiles.push(filePath);
+    }
+    if (instantTransitionPattern.test(text)) {
+      instantTransitionFiles.push(filePath);
+    }
+  });
+
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched tag suggestion hover background remains in ${staleFiles.join(", ")}.`);
+  }
+  if (patchedFiles.length < 2) {
+    throw new Error(`Missing visible tag suggestion hover marker; found ${patchedFiles.length}.`);
+  }
+  if (staleTransitionFiles.length > 0) {
+    throw new Error(`Animated tag suggestion hover transition remains in ${staleTransitionFiles.join(", ")}.`);
+  }
+  if (instantTransitionFiles.length < 2) {
+    throw new Error(`Missing instant tag suggestion hover transition marker; found ${instantTransitionFiles.length}.`);
+  }
+
+  process.stdout.write("Verified tag suggestion hover background is visible and instant on black theme.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -515,6 +567,7 @@ function verifyArtifact(options) {
   verifyAiCopilotDisclaimerPatch(asarPath);
   verifyBlackBackgroundThemePatch(asarPath);
   verifyEditorTextSelectionPatch(asarPath);
+  verifyTagSuggestionHoverPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);
