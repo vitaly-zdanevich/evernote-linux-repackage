@@ -1,4 +1,7 @@
 const assert = require("assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
 const test = require("node:test");
 
 const {
@@ -6,6 +9,7 @@ const {
   appImageArchForTargetArch,
   appRunScript,
   findSharedLibrary,
+  resolvePortableSourceDir,
 } = require("../scripts/package-appimage");
 
 test("maps supported Node architectures to AppImage architectures", () => {
@@ -26,4 +30,18 @@ test("AppRun points Electron at bundled AppImage runtime libraries", () => {
 
 test("packager returns null for missing shared libraries", () => {
   assert.equal(findSharedLibrary("libnot-a-real-evernote-test-library.so"), null);
+});
+
+test("packager resolves portable directory symlinks before copying", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "evernote-appimage-test-"));
+  try {
+    const targetDir = path.join(tempDir, "Evernote-11.17.3-linux-x64");
+    const symlinkDir = path.join(tempDir, "Evernote-linux-x64");
+    fs.mkdirSync(targetDir);
+    fs.symlinkSync(targetDir, symlinkDir);
+
+    assert.equal(resolvePortableSourceDir(symlinkDir), targetDir);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });

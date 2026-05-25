@@ -284,8 +284,12 @@ function appRunScript() {
   ].join("\n");
 }
 
+function resolvePortableSourceDir(portDir) {
+  return fs.realpathSync(path.resolve(portDir));
+}
+
 function prepareAppDir({ portDir, appDir }) {
-  const resolvedPortDir = path.resolve(portDir);
+  const resolvedPortDir = resolvePortableSourceDir(portDir);
   const resolvedAppDir = path.resolve(appDir);
 
   if (!fs.existsSync(path.join(resolvedPortDir, "evernote"))) {
@@ -433,4 +437,5 @@ module.exports = {
   findSharedLibrary,
   packageAppImage,
   prepareAppDir,
+  resolvePortableSourceDir,
 };
