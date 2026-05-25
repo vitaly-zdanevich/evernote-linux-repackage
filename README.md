@@ -40,7 +40,7 @@ On Debian/Ubuntu-like systems the native build prerequisites are typically:
 sudo apt install nodejs npm curl p7zip-full unzip build-essential pkg-config libsecret-1-dev
 ```
 
-On Gentoo-like systems, make sure `app-arch/p7zip`, `net-misc/curl`, `app-arch/unzip`, `dev-util/pkgconf`, and `gnome-extra/libsecret` are installed.
+On Gentoo-like systems, make sure `app-arch/p7zip`, `net-misc/curl`, `app-arch/unzip`, `dev-util/pkgconf`, `app-crypt/libsecret`, and `gnome-base/gnome-keyring` are installed.
 
 ## Build
 
