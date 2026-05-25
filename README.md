@@ -217,6 +217,31 @@ Repeated "Unlock Keyring" prompts usually mean the desktop keyring is locked, no
 
 Do not run the AppImage with `sudo`, from a service, or from a different user account. That creates or reads a different DBus/keyring session and can make Evernote behave as if no token exists.
 
+### Sync Looks Stuck
+
+Evernote may lazy-download full note bodies and attachments, but after a successful login the note list, account state, logs, and Conduit SQLite databases should still show activity. If the app has been open for a long time and notes do not appear, run:
+
+```bash
+npm run doctor
+```
+
+For a nonstandard profile location:
+
+```bash
+npm run doctor -- --profile /path/to/Evernote
+```
+
+The doctor command checks the Evernote profile, recent database writes, recent sync/auth/error log lines, running Evernote processes, and the DBus Secret Service state used for login tokens. Review the output before sharing it because logs may contain account or note metadata, even though common emails, UUIDs, and token-looking values are redacted.
+
+If you only downloaded the AppImage and do not have the repository checkout, these commands show the most useful sync signals:
+
+```bash
+find ~/.config/Evernote/conduit-storage -type f -printf '%TY-%Tm-%Td %TH:%TM %9s %p\n' | sort | tail -30
+find ~/.config/Evernote/logs -type f -name '*.log' -printf '%TY-%Tm-%Td %TH:%TM %9s %p\n' | sort | tail -20
+```
+
+If database files and logs stop changing while the app is open, sync is likely stuck before local storage writes. If logs show auth, token, keyring, `401`, or `403` errors, fix login/keyring first. If logs show `429` or server `5xx` responses, keep the redacted lines because that points to rate limiting or a server-side sync problem rather than AppImage packaging.
+
 ## Storage Notes
 
 The desktop app uses SQLite for its main local data layer through Evernote's Conduit packages:
