@@ -21,6 +21,10 @@ const REQUIRED_PATCH_MARKERS = [
     value: "Promise.resolve({})",
   },
   {
+    name: "missing pending update state tolerated",
+    value: "if((0,i.isNullish)(t))return{};",
+  },
+  {
     name: "in-app force update neutralized",
     value: "return{feedbackLevel:m.InAppForceUpdateFeedbackLevel.none}",
   },

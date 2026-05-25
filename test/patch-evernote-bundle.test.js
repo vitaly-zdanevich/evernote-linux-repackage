@@ -69,6 +69,7 @@ function makePatchableMainJs() {
     'init(t,a){if(this._initialized)return void E.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0,this.autoUpdater.logger=E,this.autoUpdater.autoDownload=!1}',
     "async _checkForUpdates(){try{let t=this._promiseCheckForUpdates;if(!t){let a=()=>{this._promiseCheckForUpdates=void 0};t=this.autoUpdater.checkForUpdates().then(()=>({updateAvailable:true}))}return t}catch(t){return {}}}",
     "}",
+    'function pendingUpdatePatch(){let t=null;if((0,i.isNullish)(t))throw Error("no pending update");return t}',
     "class T {",
     'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;let{feedbackLevel:a}=this;this.currentChannel=t}',
     'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";return {url:t,platform:a,release:n}}',
@@ -101,6 +102,10 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     assert.match(
       patchedMainJs,
       /Promise\.resolve\(\{\}\)\s+\.then\(\(\)=>\(\{updateAvailable:true\}\)\)/,
+    );
+    assert.match(
+      patchedMainJs,
+      /if\(\(0,i\.isNullish\)\(t\)\)return\{\};\s+return t/,
     );
     assert.match(
       patchedMainJs,

@@ -91,6 +91,13 @@ const patches = [
     replacementPrefix: "Promise.resolve({})",
   },
   {
+    resultKey: "toleratedMissingPendingUpdate",
+    description: "treated missing pending update state as normal",
+    filePath: "main.js",
+    search: 'if((0,i.isNullish)(t))throw Error("no pending update");',
+    replacementPrefix: "if((0,i.isNullish)(t))return{};",
+  },
+  {
     resultKey: "disabledInAppForceUpdateInit",
     description: "disabled in-app force-update init",
     filePath: "main.js",
