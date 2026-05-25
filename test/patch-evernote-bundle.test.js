@@ -89,6 +89,7 @@ function makePatchableMainJs() {
     'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";return {url:t,platform:a,release:n}}',
     "}",
     "const h={app:{quit(){}}};",
+    'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
     "function mainWindowClosePatch(){this.window.on(\"close\",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on(\"show\",()=>{})}",
     "function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}",
   ].join("");
@@ -319,10 +320,15 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainJs,
       /this\.tabs\.has\(t\)&&\(this\.tabs\.delete\(t\),this\.activeTabId===t&&\(this\.onActiveWebContentsChange\?\.\(null,null\),this\.activeTabId=null\)\)/,
     );
+    assert.match(
+      patchedMainJs,
+      /backgroundColor:"#000000"\s+,backgroundMaterial:"none",vibrancy:"fullscreen-ui"/,
+    );
     assert.doesNotMatch(
       patchedMainJs,
       /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/,
     );
+    assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
     assert.doesNotMatch(patchedMainJs, /this\.hidden=!0,this\.window\.hide\(\)\}\}\),this\.window\.on\("show"/);
     assert.doesNotMatch(patchedMainJs, /this\.activeTabId=null\),this\.publishState\(\)\)/);
     assert.doesNotMatch(patchedMainJs, /audio\/x-flac/);

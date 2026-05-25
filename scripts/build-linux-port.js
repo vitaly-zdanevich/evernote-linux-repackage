@@ -297,6 +297,31 @@ function makeLauncher(outDir) {
   fs.chmodSync(launcherPath, 0o755);
 }
 
+function patchStaticResources(resourcesDir) {
+  const splashScreenPath = path.join(resourcesDir, "static", "splashscreen", "splashscreen.html");
+  if (!fs.existsSync(splashScreenPath)) {
+    throw new Error(`Splash screen not found: ${splashScreenPath}`);
+  }
+
+  const source = fs.readFileSync(splashScreenPath, "utf8");
+  const patched = source
+    .replace(
+      '<html style="height: 100%; width: 100%; overflow: hidden">',
+      '<html style="height: 100%; width: 100%; overflow: hidden; background: #000">',
+    )
+    .replace(/background: rgb\((?:26 26 26|255 255 255)\);/g, "background: rgb(0 0 0);")
+    .replace("color: rgb(26 26 26);", "color: rgb(255 255 255);")
+    .replace(
+      '<body style="height: 100%; width: 100%">',
+      '<body style="height: 100%; width: 100%; background: #000; color: #fff">',
+    );
+
+  if (patched === source) {
+    throw new Error(`Splash screen patch target not found: ${splashScreenPath}`);
+  }
+  fs.writeFileSync(splashScreenPath, patched);
+}
+
 function build() {
   if (process.platform !== "linux") {
     throw new Error("This build script must run on Linux.");
@@ -390,6 +415,7 @@ function build() {
     path.join(outResources, "app.asar.unpacked"),
   );
   copyInto(path.join(payloadDir, "resources", "static"), path.join(outResources, "static"));
+  patchStaticResources(outResources);
   copyInto(
     path.join(payloadDir, "resources", "app-update.yml"),
     path.join(outResources, "app-update.yml"),
@@ -439,4 +465,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { launcherScript };
+module.exports = { launcherScript, patchStaticResources };

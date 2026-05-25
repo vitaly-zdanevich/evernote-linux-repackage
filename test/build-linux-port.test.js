@@ -7,7 +7,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { launcherScript } = require("../scripts/build-linux-port");
+const { launcherScript, patchStaticResources } = require("../scripts/build-linux-port");
 
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "evernote-launcher-test-"));
@@ -86,6 +86,54 @@ test("launcher preserves existing local settings", () => {
 
     assert.equal(result.status, 0, result.stderr);
     assert.equal(fs.readFileSync(settingsPath, "utf8"), '{"theme":"dark"}\n');
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+test("static splash screen starts with black backgrounds", () => {
+  const tempDir = makeTempDir();
+  try {
+    const resourcesDir = path.join(tempDir, "resources");
+    const splashDir = path.join(resourcesDir, "static", "splashscreen");
+    const splashPath = path.join(splashDir, "splashscreen.html");
+    fs.mkdirSync(splashDir, { recursive: true });
+    fs.writeFileSync(
+      splashPath,
+      [
+        '<!doctype html>',
+        '<html style="height: 100%; width: 100%; overflow: hidden">',
+        "  <head>",
+        "    <style>",
+        "      @media (prefers-color-scheme: dark) {",
+        "        body {",
+        "          background: rgb(26 26 26);",
+        "          color: rgb(255 255 255);",
+        "        }",
+        "      }",
+        "      @media (prefers-color-scheme: light) {",
+        "        body {",
+        "          background: rgb(255 255 255);",
+        "          color: rgb(26 26 26);",
+        "        }",
+        "      }",
+        "    </style>",
+        "  </head>",
+        '  <body style="height: 100%; width: 100%">',
+        "  </body>",
+        "</html>",
+        "",
+      ].join("\n"),
+    );
+
+    patchStaticResources(resourcesDir);
+
+    const patched = fs.readFileSync(splashPath, "utf8");
+    assert.match(patched, /<html style="[^"]*background: #000"/);
+    assert.match(patched, /<body style="[^"]*background: #000; color: #fff"/);
+    assert.match(patched, /background: rgb\(0 0 0\);/);
+    assert.doesNotMatch(patched, /background: rgb\(255 255 255\);/);
+    assert.doesNotMatch(patched, /color: rgb\(26 26 26\);/);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }

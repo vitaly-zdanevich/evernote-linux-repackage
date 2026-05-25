@@ -437,6 +437,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     replacementPrefix: "disclaimer:void 0",
   },
   {
+    resultKey: "blackBrowserWindowBackground",
+    description: "forced Electron window startup background to black",
+    filePath: "main.js",
+    search:
+      'backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui"',
+    replacementPrefix:
+      'backgroundColor:"#000000"    ,backgroundMaterial:"none",vibrancy:"fullscreen-ui"',
+  },
+  {
     resultKey: "blackAppBackgroundThemeVariables",
     description: "forced app chrome background theme tokens to black",
     filePattern: BLACK_APP_BACKGROUND_FILE_PATTERN,

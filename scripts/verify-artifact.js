@@ -37,6 +37,10 @@ const REQUIRED_PATCH_MARKERS = [
     value:
       "this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null))",
   },
+  {
+    name: "browser window startup background is black",
+    value: 'backgroundColor:"#000000"',
+  },
 ];
 
 const REQUIRED_LINUX_NATIVE_MODULES = [
@@ -384,6 +388,36 @@ function verifyBlackBackgroundThemePatch(asarPath) {
   process.stdout.write("Verified black background theme patches.\n");
 }
 
+function verifyStartupBackgroundPatch(portDir, asarPath) {
+  const mainJs = readAsarText(asarPath, "main.js");
+  const splashScreenPath = path.join(
+    portDir,
+    "resources",
+    "static",
+    "splashscreen",
+    "splashscreen.html",
+  );
+  const splashScreen = fs.readFileSync(splashScreenPath, "utf8");
+
+  if (mainJs.includes('backgroundColor:"transparent"')) {
+    throw new Error("Unpatched transparent Electron window startup background remains.");
+  }
+  if (!mainJs.includes('backgroundColor:"#000000"')) {
+    throw new Error("Missing black Electron window startup background marker.");
+  }
+  if (!splashScreen.includes("background: #000")) {
+    throw new Error("Missing black splash screen inline background marker.");
+  }
+  if (/background: rgb\(255 255 255\);|color: rgb\(26 26 26\);/.test(splashScreen)) {
+    throw new Error("Unpatched light splash screen colors remain.");
+  }
+  if (!/background: rgb\(0 0 0\);/.test(splashScreen)) {
+    throw new Error("Missing black splash screen media background marker.");
+  }
+
+  process.stdout.write("Verified startup window and splash backgrounds are black.\n");
+}
+
 function verifyEditorTextSelectionPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const selectionFilePattern =
@@ -640,6 +674,7 @@ function verifyArtifact(options) {
   verifyFlacMimePatch(asarPath);
   verifyAiCopilotDisclaimerPatch(asarPath);
   verifyBlackBackgroundThemePatch(asarPath);
+  verifyStartupBackgroundPatch(portDir, asarPath);
   verifyEditorTextSelectionPatch(asarPath);
   verifyTagSuggestionHoverPatch(asarPath);
   verifyDropdownItemHoverPatch(asarPath);
