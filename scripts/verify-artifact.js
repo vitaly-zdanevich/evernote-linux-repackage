@@ -240,6 +240,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     "7839.js",
     "8634.js",
     "2002.js",
+    "8453.js",
     "3014.js",
     "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
   ];
@@ -249,6 +250,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     /^7839\.js$/,
     /^8634\.js$/,
     /^2002\.js$/,
+    /^8453\.js$/,
     /^3014\.js$/,
     /^4701\.js$/,
     /^ce\/chunks\/9008\.[^/]+\.js$/,
@@ -394,11 +396,18 @@ function verifyCollapsedNavWidthPatch(asarPath) {
 function verifyCollapsedNavSpacingPatch(asarPath) {
   const navStylesRuntime = readAsarText(asarPath, "2002.js");
   const oldPaddingToken = "--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);";
-  const newPaddingToken = "--nav-collapsed-padding:var(--spacing-1-5)var(--spacing-2);";
+  const intermediatePaddingToken = "--nav-collapsed-padding:var(--spacing-1-5)var(--spacing-2);";
+  const newPaddingToken = "--nav-collapsed-padding:var(--spacing-1-5)0;";
   const oldItemPadding = "padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;";
-  const newItemPadding = "padding:var(--spacing-1-5)var(--spacing-2);justify-content:center;";
+  const intermediateItemPadding = "padding:var(--spacing-1-5)var(--spacing-2);justify-content:center;";
+  const newItemPadding = "padding:var(--spacing-1-5)0;justify-content:center;";
 
-  if (navStylesRuntime.includes(oldPaddingToken) || navStylesRuntime.includes(oldItemPadding)) {
+  if (
+    navStylesRuntime.includes(oldPaddingToken) ||
+    navStylesRuntime.includes(intermediatePaddingToken) ||
+    navStylesRuntime.includes(oldItemPadding) ||
+    navStylesRuntime.includes(intermediateItemPadding)
+  ) {
     throw new Error("Unpatched collapsed sidebar icon spacing remains.");
   }
   if (!navStylesRuntime.includes(newPaddingToken) || !navStylesRuntime.includes(newItemPadding)) {
@@ -406,6 +415,34 @@ function verifyCollapsedNavSpacingPatch(asarPath) {
   }
 
   process.stdout.write("Verified collapsed sidebar icon rail vertical spacing.\n");
+}
+
+function verifyCollapsedNavThinWidthPatch(asarPath) {
+  const navStylesRuntime = readAsarText(asarPath, "2002.js");
+  const navConstantsRuntime = readAsarText(asarPath, "8453.js");
+  const oldCompiledContainerWidth = "width:60px;transition:width .2s ease-in-out";
+  const newCompiledContainerWidth = "width:30px;transition:width .2s ease-in-out";
+
+  if (navStylesRuntime.includes("--nav-collapsed-width:60px;")) {
+    throw new Error("Unpatched collapsed sidebar CSS rail width remains.");
+  }
+  if (!navStylesRuntime.includes("--nav-collapsed-width:30px;")) {
+    throw new Error("Missing halved collapsed sidebar CSS rail width marker.");
+  }
+  if (navStylesRuntime.includes(oldCompiledContainerWidth)) {
+    throw new Error("Unpatched collapsed sidebar active container width remains.");
+  }
+  if (!navStylesRuntime.includes(newCompiledContainerWidth)) {
+    throw new Error("Missing halved collapsed sidebar active container width marker.");
+  }
+  if (navConstantsRuntime.includes("d=60,c=96")) {
+    throw new Error("Unpatched collapsed sidebar runtime rail width remains.");
+  }
+  if (!navConstantsRuntime.includes("d=30,c=96")) {
+    throw new Error("Missing halved collapsed sidebar runtime rail width marker.");
+  }
+
+  process.stdout.write("Verified collapsed sidebar rail width is halved.\n");
 }
 
 function verifyNoteSnippetSeparatorsPatch(asarPath) {
@@ -441,6 +478,7 @@ function verifyArtifact(options) {
   verifyBlackBackgroundThemePatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
+  verifyCollapsedNavThinWidthPatch(asarPath);
   verifyNoteSnippetSeparatorsPatch(asarPath);
 
   process.stdout.write(`Artifact verification passed: ${portDir}\n`);

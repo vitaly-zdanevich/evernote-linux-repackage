@@ -191,11 +191,16 @@ function makePatchableMainNavChunkJs() {
 function makePatchableNavStylesChunkJs() {
   return [
     "(()=>{",
-    'const css=":root{--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);}',
+    'const css=":root{--nav-collapsed-width:60px;--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);}',
+    ".collapsedRail{width:60px;transition:width .2s ease-in-out}",
     '.collapsedItem{padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;}";',
     "void css;",
     "})();",
   ].join("");
+}
+
+function makePatchableNavConstantsChunkJs() {
+  return "function navConstants(){const n=244,r=400,i=244,s=205,l=244,d=60,c=96;return d+c}";
 }
 
 function makePatchableNoteListStylesChunkJs() {
@@ -220,6 +225,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "7839.js": makePatchableAppThemeChunkJs(),
       "8634.js": makePatchableMainNavChunkJs(),
       "2002.js": makePatchableNavStylesChunkJs(),
+      "8453.js": makePatchableNavConstantsChunkJs(),
       "3014.js": makePatchableNoteListStylesChunkJs(),
       "ce/ce-test.css": makePatchableEditorCss(),
       "node_modules/@evernote/common-editor/headless.css": makePatchableEditorCss(),
@@ -353,14 +359,28 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");
     assert.match(
       patchedNavStylesChunkJs,
-      /--nav-collapsed-padding:var\(--spacing-1-5\)var\(--spacing-2\);/,
+      /--nav-collapsed-width:30px;/,
     );
     assert.match(
       patchedNavStylesChunkJs,
-      /padding:var\(--spacing-1-5\)var\(--spacing-2\);justify-content:center;/,
+      /width:30px;transition:width \.2s ease-in-out/,
     );
+    assert.match(
+      patchedNavStylesChunkJs,
+      /--nav-collapsed-padding:var\(--spacing-1-5\)0;\s+/,
+    );
+    assert.match(
+      patchedNavStylesChunkJs,
+      /padding:var\(--spacing-1-5\)0;justify-content:center;\s+/,
+    );
+    assert.doesNotMatch(patchedNavStylesChunkJs, /--nav-collapsed-width:60px/);
+    assert.doesNotMatch(patchedNavStylesChunkJs, /width:60px;transition:width \.2s ease-in-out/);
     assert.doesNotMatch(patchedNavStylesChunkJs, /spacing-0-5/);
     assert.doesNotThrow(() => new Function(patchedNavStylesChunkJs));
+    const patchedNavConstantsChunkJs = readMinimalAsarEntry(asarPath, "8453.js");
+    assert.match(patchedNavConstantsChunkJs, /d=30,c=96/);
+    assert.doesNotMatch(patchedNavConstantsChunkJs, /d=60,c=96/);
+    assert.doesNotThrow(() => new Function(patchedNavConstantsChunkJs));
     const patchedNoteListStylesChunkJs = readMinimalAsarEntry(asarPath, "3014.js");
     assert.match(
       patchedNoteListStylesChunkJs,

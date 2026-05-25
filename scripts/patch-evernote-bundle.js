@@ -282,6 +282,15 @@ const BLACK_EDITOR_HARDCODED_BACKGROUND_PATTERN =
   /background(?:-color)?:#262626/g;
 const BLACK_EDITOR_HARDCODED_ALREADY_PATCHED_PATTERN =
   /background(?:-color)?:#000\s*(?=;)/g;
+const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
+const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
+  /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
+const COLLAPSED_NAV_PADDING_TOKEN_ALREADY_PATCHED_PATTERN =
+  /--nav-collapsed-padding:var\(--spacing-1-5\)0\s*;/g;
+const COLLAPSED_NAV_ITEM_PADDING_PATTERN =
+  /padding:var\(--spacing-[01]-5\)var\(--spacing-2\);justify-content:center;/g;
+const COLLAPSED_NAV_ITEM_PADDING_ALREADY_PATCHED_PATTERN =
+  /padding:var\(--spacing-1-5\)0;justify-content:center;\s*/g;
 
 const patches = [
   {
@@ -439,17 +448,44 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   },
   {
     resultKey: "expandedCollapsedNavPaddingToken",
-    description: "increased collapsed sidebar icon rail vertical padding token",
-    filePath: "2002.js",
-    search: "--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);",
-    replacementPrefix: "--nav-collapsed-padding:var(--spacing-1-5)var(--spacing-2);",
+    description: "increased collapsed sidebar icon rail vertical padding token and removed horizontal padding",
+    filePattern: COLLAPSED_NAV_STYLES_FILE_PATTERN,
+    pattern: COLLAPSED_NAV_PADDING_TOKEN_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(match, "--nav-collapsed-padding:var(--spacing-1-5)0;"),
+    alreadyPatchedPattern: COLLAPSED_NAV_PADDING_TOKEN_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: "expandedCollapsedNavItemPadding",
-    description: "increased collapsed sidebar icon rail item vertical padding",
+    description: "increased collapsed sidebar icon rail item vertical padding and removed horizontal padding",
+    filePattern: COLLAPSED_NAV_STYLES_FILE_PATTERN,
+    pattern: COLLAPSED_NAV_ITEM_PADDING_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(match, "padding:var(--spacing-1-5)0;justify-content:center;"),
+    alreadyPatchedPattern: COLLAPSED_NAV_ITEM_PADDING_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "thinnedCollapsedNavCssWidth",
+    description: "halved collapsed sidebar CSS rail width token",
     filePath: "2002.js",
-    search: "padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;",
-    replacementPrefix: "padding:var(--spacing-1-5)var(--spacing-2);justify-content:center;",
+    search: "--nav-collapsed-width:60px;",
+    replacementPrefix: "--nav-collapsed-width:30px;",
+  },
+  {
+    resultKey: "thinnedCollapsedNavContainerWidth",
+    description: "halved collapsed sidebar active container width",
+    filePath: "2002.js",
+    search: "width:60px;transition:width .2s ease-in-out",
+    replacementPrefix: "width:30px;transition:width .2s ease-in-out",
+  },
+  {
+    resultKey: "thinnedCollapsedNavWidthConstant",
+    description: "halved collapsed sidebar runtime rail width",
+    filePath: "8453.js",
+    search: "d=60,c=96",
+    replacementPrefix: "d=30,c=96",
   },
   {
     resultKey: "removedNoteSnippetSeparators",
