@@ -17,12 +17,22 @@ function writeMinimalAsar(asarPath, files) {
   const header = { files: {} };
   const contents = [];
 
+  function setHeaderEntry(fileName, entry) {
+    const parts = fileName.split("/");
+    let current = header;
+    for (const part of parts.slice(0, -1)) {
+      current.files[part] ||= { files: {} };
+      current = current.files[part];
+    }
+    current.files[parts[parts.length - 1]] = entry;
+  }
+
   for (const [name, content] of Object.entries(files)) {
     const contentBuffer = Buffer.from(content);
-    header.files[name] = {
+    setHeaderEntry(name, {
       size: contentBuffer.length,
       offset: String(offset),
-    };
+    });
     contents.push(contentBuffer);
     offset += contentBuffer.length;
   }
@@ -51,7 +61,10 @@ function readMinimalAsarEntry(asarPath, fileName) {
   const headerSize = buffer.readUInt32LE(4);
   const jsonSize = buffer.readUInt32LE(12);
   const header = JSON.parse(buffer.subarray(16, 16 + jsonSize).toString());
-  const entry = header.files[fileName];
+  let entry = header;
+  for (const part of fileName.split("/")) {
+    entry = entry.files && entry.files[part];
+  }
   assert.ok(entry, `Missing ASAR test entry: ${fileName}`);
   const start = 8 + headerSize + Number(entry.offset);
   return buffer.subarray(start, start + Number(entry.size)).toString();
@@ -70,6 +83,7 @@ function makePatchableMainJs() {
     "async _checkForUpdates(){try{let t=this._promiseCheckForUpdates;if(!t){let a=()=>{this._promiseCheckForUpdates=void 0};t=this.autoUpdater.checkForUpdates().then(()=>({updateAvailable:true}))}return t}catch(t){return {}}}",
     "}",
     'function pendingUpdatePatch(){let t=null;if((0,i.isNullish)(t))throw Error("no pending update");return t}',
+    'const flacMime="audio/x-flac";',
     "class T {",
     'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;let{feedbackLevel:a}=this;this.currentChannel=t}',
     'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";return {url:t,platform:a,release:n}}',
@@ -80,13 +94,32 @@ function makePatchableMainJs() {
   ].join("");
 }
 
+function makePatchableMainResourceProxyJs() {
+  return `function extractMetadataFromHeaders(headers) {
+    var _a, _b, _c, _d;
+    // Ref https://nodejs.org/api/http.html#http_message_headers certain headers are type \`string[]\` while others are \`string\`
+    const mime = ((_a = headers['content-type']) !== null && _a !== void 0 ? _a : '');
+    const rawExpires = Date.parse(((_b = headers.expires) !== null && _b !== void 0 ? _b : ''));
+    const expires = Number.isNaN(rawExpires) ? 0 : rawExpires;
+    const rawDate = Date.parse(((_c = headers.date) !== null && _c !== void 0 ? _c : ''));
+    const date = Number.isNaN(rawDate) ? 0 : rawDate;
+    const etag = ((_d = headers.etag) !== null && _d !== void 0 ? _d : '');
+    return { mime, expires, etag, ttl: expires > 0 && date > 0 ? expires - date : 0, isValid: true };
+}
+`;
+}
+
 test("patchEvernoteBundle applies Linux port patches in-place", () => {
   const tempDir = makeTempDir();
   try {
     const asarPath = path.join(tempDir, "app.asar");
     const mainJs = makePatchableMainJs();
 
-    writeMinimalAsar(asarPath, { "main.js": mainJs });
+    writeMinimalAsar(asarPath, {
+      "main.js": mainJs,
+      "node_modules/en-conduit-electron/dist/MainResourceProxy.js":
+        makePatchableMainResourceProxyJs(),
+    });
 
     const firstPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {
@@ -94,6 +127,10 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     }
 
     const patchedMainJs = readMinimalAsarEntry(asarPath, "main.js");
+    const patchedMainResourceProxyJs = readMinimalAsarEntry(
+      asarPath,
+      "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+    );
     assert.match(patchedMainJs, /preloadWarmTab\(\)\{return;\s+this\.isPreloadingWarmTab=!0/);
     assert.match(
       patchedMainJs,
@@ -107,6 +144,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainJs,
       /if\(\(0,i\.isNullish\)\(t\)\)return\{\};\s+return t/,
     );
+    assert.match(patchedMainJs, /const flacMime="audio\/flac\s\s";/);
     assert.match(
       patchedMainJs,
       /Trying to init multiple times"\);this\._initialized=!0;return;\s+this\.currentChannel=t/,
@@ -129,7 +167,15 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     );
     assert.doesNotMatch(patchedMainJs, /this\.hidden=!0,this\.window\.hide\(\)\}\}\),this\.window\.on\("show"/);
     assert.doesNotMatch(patchedMainJs, /this\.activeTabId=null\),this\.publishState\(\)\)/);
+    assert.doesNotMatch(patchedMainJs, /audio\/x-flac/);
     assert.doesNotThrow(() => new Function(patchedMainJs));
+    assert.ok(
+      patchedMainResourceProxyJs.includes(
+        String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`,
+      ),
+    );
+    assert.doesNotMatch(patchedMainResourceProxyJs, /headers\['content-type'\]\) !== null/);
+    assert.doesNotThrow(() => new Function(patchedMainResourceProxyJs));
 
     const secondPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {

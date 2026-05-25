@@ -58,6 +58,63 @@ function replaceInAsarEntry(asarPath, filePath, search, replacement) {
   return true;
 }
 
+function walkAsarEntries(entry, callback, filePath = "") {
+  for (const [name, child] of Object.entries(entry.files || {})) {
+    const childPath = filePath ? `${filePath}/${name}` : name;
+    if (child.files) {
+      walkAsarEntries(child, callback, childPath);
+    } else {
+      callback(childPath, child);
+    }
+  }
+}
+
+function replaceAllInAsarEntries(asarPath, filePattern, search, replacement) {
+  const searchBytes = Buffer.from(search);
+  const replacementBytes = Buffer.from(replacement);
+  if (searchBytes.length !== replacementBytes.length) {
+    throw new Error(
+      `Replacement must preserve byte length: ${searchBytes.length} != ${replacementBytes.length}`,
+    );
+  }
+
+  const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
+  let replacements = 0;
+  let alreadyPatched = false;
+
+  walkAsarEntries(header, (filePath, entry) => {
+    if (entry.unpacked || !filePattern.test(filePath)) {
+      return;
+    }
+
+    const start = baseOffset + Number(entry.offset);
+    const end = start + Number(entry.size);
+    const fileBuffer = buffer.subarray(start, end);
+    let index = fileBuffer.indexOf(searchBytes);
+
+    if (index === -1) {
+      alreadyPatched ||= fileBuffer.indexOf(replacementBytes) !== -1;
+      return;
+    }
+
+    while (index !== -1) {
+      replacementBytes.copy(buffer, start + index);
+      replacements += 1;
+      index = fileBuffer.indexOf(searchBytes, index + replacementBytes.length);
+    }
+  });
+
+  if (replacements === 0) {
+    if (alreadyPatched) {
+      return false;
+    }
+    throw new Error(`Patch target not found in ASAR entries: ${search}`);
+  }
+
+  fs.writeFileSync(asarPath, buffer);
+  return true;
+}
+
 function sameLengthReplacement(search, replacementPrefix) {
   if (replacementPrefix.length > search.length) {
     throw new Error("Replacement prefix is longer than search string.");
@@ -96,6 +153,42 @@ const patches = [
     filePath: "main.js",
     search: 'if((0,i.isNullish)(t))throw Error("no pending update");',
     replacementPrefix: "if((0,i.isNullish)(t))return{};",
+  },
+  {
+    resultKey: "normalizedFlacMimeType",
+    description: "normalized FLAC MIME type for Chromium media playback",
+    filePattern: /\.(?:js|json|html)$/i,
+    search: "audio/x-flac",
+    replacementPrefix: "audio/flac  ",
+    replaceAll: true,
+  },
+  {
+    resultKey: "normalizedResourceProxyFlacMimeType",
+    description: "normalized FLAC MIME type from resource proxy response headers",
+    filePath: "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+    search: `function extractMetadataFromHeaders(headers) {
+    var _a, _b, _c, _d;
+    // Ref https://nodejs.org/api/http.html#http_message_headers certain headers are type \`string[]\` while others are \`string\`
+    const mime = ((_a = headers['content-type']) !== null && _a !== void 0 ? _a : '');
+    const rawExpires = Date.parse(((_b = headers.expires) !== null && _b !== void 0 ? _b : ''));
+    const expires = Number.isNaN(rawExpires) ? 0 : rawExpires;
+    const rawDate = Date.parse(((_c = headers.date) !== null && _c !== void 0 ? _c : ''));
+    const date = Number.isNaN(rawDate) ? 0 : rawDate;
+    const etag = ((_d = headers.etag) !== null && _d !== void 0 ? _d : '');
+    return { mime, expires, etag, ttl: expires > 0 && date > 0 ? expires - date : 0, isValid: true };
+}
+`,
+    replacementPrefix: `function extractMetadataFromHeaders(headers) {
+    const headerMime = headers["content-type"] ?? "";
+    const mime = String(Array.isArray(headerMime) ? headerMime[0] ?? "" : headerMime).replace(/^audio\\/x-flac\\b/i, "audio/flac");
+    const rawExpires = Date.parse(headers.expires ?? "");
+    const expires = Number.isNaN(rawExpires) ? 0 : rawExpires;
+    const rawDate = Date.parse(headers.date ?? "");
+    const date = Number.isNaN(rawDate) ? 0 : rawDate;
+    const etag = String(headers.etag ?? "");
+    return { mime, expires, etag, ttl: expires > 0 && date > 0 ? expires - date : 0, isValid: true };
+}
+`,
   },
   {
     resultKey: "disabledInAppForceUpdateInit",
@@ -142,12 +235,19 @@ function patchEvernoteBundle(asarPath) {
   };
 
   for (const patch of patches) {
-    result[patch.resultKey] = replaceInAsarEntry(
-      resolvedAsarPath,
-      patch.filePath,
-      patch.search,
-      sameLengthReplacement(patch.search, patch.replacementPrefix),
-    );
+    result[patch.resultKey] = patch.replaceAll
+      ? replaceAllInAsarEntries(
+          resolvedAsarPath,
+          patch.filePattern,
+          patch.search,
+          sameLengthReplacement(patch.search, patch.replacementPrefix),
+        )
+      : replaceInAsarEntry(
+          resolvedAsarPath,
+          patch.filePath,
+          patch.search,
+          sameLengthReplacement(patch.search, patch.replacementPrefix),
+        );
   }
 
   return result;

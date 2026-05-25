@@ -162,6 +162,12 @@ npm run verify
 
 The verifier checks that the rebuilt native modules used by the Linux port are ELF binaries, the expected bundle patches are present, and `main.js` still parses.
 
+To inspect Chromium media MIME support in the pinned Electron runtime after a local build, run:
+
+```bash
+npm run check:media
+```
+
 After `npm run build`, run the startup smoke test with:
 
 ```bash
@@ -241,6 +247,10 @@ find ~/.config/Evernote/logs -type f -name '*.log' -printf '%TY-%Tm-%Td %TH:%TM 
 ```
 
 If database files and logs stop changing while the app is open, sync is likely stuck before local storage writes. If logs show auth, token, keyring, `401`, or `403` errors, fix login/keyring first. If logs show `429` or server `5xx` responses, keep the redacted lines because that points to rate limiting or a server-side sync problem rather than AppImage packaging.
+
+### FLAC Audio Does Not Play
+
+The pinned Electron runtime reports `audio/flac` as playable, but not the older `audio/x-flac` MIME alias. The build patcher normalizes bundled runtime MIME metadata from `audio/x-flac` to `audio/flac` so FLAC attachments can be handed to Chromium's media element with a playable MIME type.
 
 ## Storage Notes
 

@@ -114,6 +114,17 @@ function readAsarText(asarPath, filePath) {
   return buffer.subarray(offset, offset + Number(entry.size)).toString();
 }
 
+function walkAsarEntries(entry, callback, filePath = "") {
+  for (const [name, child] of Object.entries(entry.files || {})) {
+    const childPath = filePath ? `${filePath}/${name}` : name;
+    if (child.files) {
+      walkAsarEntries(child, callback, childPath);
+    } else {
+      callback(childPath, child);
+    }
+  }
+}
+
 function listFiles(dir) {
   if (!fs.existsSync(dir)) {
     return [];
@@ -203,6 +214,48 @@ function verifyBundlePatches(asarPath) {
   process.stdout.write("Verified app.asar patch markers and main.js syntax.\n");
 }
 
+function verifyFlacMimePatch(asarPath) {
+  const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
+  const runtimeFilePattern = /\.(?:js|json|html)$/i;
+  const oldMime = "audio/x-flac";
+  const newMime = "audio/flac  ";
+  const proxyMarker = String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`;
+  const oldMimeFiles = [];
+  let newMimeCount = 0;
+
+  walkAsarEntries(header, (filePath, entry) => {
+    if (entry.unpacked || !runtimeFilePattern.test(filePath)) {
+      return;
+    }
+
+    const offset = baseOffset + Number(entry.offset);
+    const text = buffer.subarray(offset, offset + Number(entry.size)).toString();
+    if (text.includes(oldMime)) {
+      oldMimeFiles.push(filePath);
+    }
+    if (text.includes(newMime)) {
+      newMimeCount += 1;
+    }
+  });
+
+  if (oldMimeFiles.length > 0) {
+    throw new Error(`Unpatched FLAC MIME type remains in ASAR entries: ${oldMimeFiles.join(", ")}`);
+  }
+  if (newMimeCount === 0) {
+    throw new Error("Missing normalized FLAC MIME type marker in ASAR runtime entries.");
+  }
+  if (
+    !readAsarText(
+      asarPath,
+      "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+    ).includes(proxyMarker)
+  ) {
+    throw new Error("Missing FLAC MIME normalization in MainResourceProxy response metadata.");
+  }
+
+  process.stdout.write(`Verified FLAC MIME type normalization in ${newMimeCount} runtime entry occurrence(s).\n`);
+}
+
 function verifyArtifact(options) {
   const portDir = path.resolve(options.portDir);
   const asarPath = path.join(portDir, "resources", "app.asar");
@@ -215,6 +268,7 @@ function verifyArtifact(options) {
 
   verifyNativeModules(portDir);
   verifyBundlePatches(asarPath);
+  verifyFlacMimePatch(asarPath);
 
   process.stdout.write(`Artifact verification passed: ${portDir}\n`);
 }
