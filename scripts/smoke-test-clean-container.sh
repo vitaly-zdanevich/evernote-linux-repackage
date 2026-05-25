@@ -30,7 +30,7 @@ docker run --rm \
   -e EVERNOTE_CONTAINER_APPIMAGE="/workspace/$appimage" \
   -v "$PWD:/workspace:ro" \
   -w /workspace \
-  ubuntu:22.04 \
+  ubuntu:24.04 \
   bash -euo pipefail -c '
     apt-get update
     apt-get install -y --no-install-recommends \
@@ -52,7 +52,7 @@ docker run --rm \
       libxkbcommon0 \
       libxshmfence1
 
-    if dpkg-query -W -f="${Status}" libsecret-1-0 2>/dev/null | grep -q "install ok installed"; then
+    if dpkg-query -W libsecret-1-0 >/dev/null 2>&1; then
       echo "Container unexpectedly has libsecret-1-0 installed." >&2
       exit 1
     fi
