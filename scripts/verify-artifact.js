@@ -691,6 +691,23 @@ function verifyActiveTabTitlePatch(asarPath) {
   process.stdout.write("Verified active tab title is white and bold.\n");
 }
 
+function verifyTabButtonHitTargetPatch(asarPath) {
+  const runtime = readAsarText(asarPath, "boronTabShell.js");
+  const staleMarker =
+    ".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}";
+  const patchedMarker =
+    ".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}";
+
+  if (runtime.includes(staleMarker)) {
+    throw new Error("Unpatched tab button top-edge hit target remains.");
+  }
+  if (!runtime.includes(patchedMarker)) {
+    throw new Error("Missing full-height tab button marker.");
+  }
+
+  process.stdout.write("Verified tab buttons reach the top edge of the tab shell.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -795,6 +812,7 @@ function verifyArtifact(options) {
   verifySourceUrlPillWidthPatch(asarPath);
   verifyMultiSelectFloatingMenuPatch(asarPath);
   verifyActiveTabTitlePatch(asarPath);
+  verifyTabButtonHitTargetPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);

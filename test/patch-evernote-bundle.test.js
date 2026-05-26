@@ -248,7 +248,7 @@ function makePatchableMainNavChunkJs() {
 function makePatchableTabShellJs() {
   return [
     "(()=>{",
-    'const css=".tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
+    'const css=".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}.tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
     "void css;",
     "})();",
   ].join("");
@@ -532,6 +532,14 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     assert.doesNotMatch(
       patchedTabShellJs,
       /\.gger9Drdmhogq7zI\{background:var\(--color-surface-fill-primary-enabled\);color:var\(--color-text-fill-tertiary-enabled\);border-radius:24px\}/,
+    );
+    assert.match(
+      patchedTabShellJs,
+      /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{[^}]*height:40px;/,
+    );
+    assert.doesNotMatch(
+      patchedTabShellJs,
+      /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{[^}]*height:38px;/,
     );
     assert.doesNotThrow(() => new Function(patchedTabShellJs));
     const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");

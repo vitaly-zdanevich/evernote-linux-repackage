@@ -326,6 +326,10 @@ const ACTIVE_TAB_INNER_STYLES =
   ".gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}";
 const ACTIVE_TAB_INNER_REPLACEMENT =
   ".gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:#fff;font-weight:700;border-radius:24px}";
+const TAB_BUTTON_HEIGHT_STYLES =
+  ".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}";
+const TAB_BUTTON_HEIGHT_REPLACEMENT =
+  ".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}";
 const COLLAPSED_NAV_PADDING_TOKEN_STYLES =
   "--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);";
 const COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT =
@@ -590,6 +594,13 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: "boronTabShell.js",
     search: ACTIVE_TAB_INNER_STYLES,
     replacementPrefix: ACTIVE_TAB_INNER_REPLACEMENT,
+  },
+  {
+    resultKey: "fullHeightTabButtons",
+    description: "extended tab buttons to top edge of tab shell",
+    filePath: "boronTabShell.js",
+    search: TAB_BUTTON_HEIGHT_STYLES,
+    replacementPrefix: TAB_BUTTON_HEIGHT_REPLACEMENT,
   },
   {
     resultKey: "minimizedCollapsedNavWidth",
