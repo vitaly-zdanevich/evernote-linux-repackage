@@ -12,7 +12,7 @@ Tested manually with Evernote `11.17.3` from `https://win.desktop.evernote.com/b
 
 - Electron payload detected: `37.6.0`
 - Main process starts under Linux Electron
-- Conduit Core starts and opens SQLite databases
+- Conduit Core starts and opens [SQLite](https://en.wikipedia.org/wiki/SQLite) databases
 - Login window loads and builds an OAuth request with `os_platform=linux`
 - No Wine is involved
 
@@ -30,9 +30,9 @@ If you use Evernote on Linux, consider writing to Evernote and asking for an off
 
 ## Differences From Evernote Web
 
-This project runs Evernote's desktop client code, so it can expose desktop-only or desktop-first workflows that are missing or less complete in Evernote Web:
+This project runs Evernote's desktop client code. Compared with Evernote Web, it provides these desktop app workflows:
 
-- Offline/local database support. The desktop app stores synced notes and notebooks in a local database for offline access. This Linux repackage uses the same Conduit/SQLite desktop storage layer, but attachments are still lazy-loaded in practice and should not be assumed to be fully downloaded ahead of time. See [offline notes](https://help.evernote.com/hc/en-us/articles/209005917-Access-notes-offline).
+- Offline/local database support. The desktop app stores synced notes and notebooks in a local database for offline access. This Linux repackage uses the same Conduit/[SQLite](https://en.wikipedia.org/wiki/SQLite) desktop storage layer, but attachments are still lazy-loaded in practice and should not be assumed to be fully downloaded ahead of time. See [offline notes](https://help.evernote.com/hc/en-us/articles/209005917-Access-notes-offline).
 - ENEX/HTML export. Note and notebook export is a desktop-app feature, not an Evernote Web feature. See [Export Notes and Notebooks as ENEX or HTML](https://help.evernote.com/hc/en-us/articles/209005557-Export-Notes-and-Notebooks-as-ENEX-or-HTML).
 - ENEX import and file import workflows. ENEX import is handled by the desktop app; Evernote Web does not provide the same ENEX restore workflow. Desktop file import also supports content from other apps. See [How To: Import Notes and Notebooks](https://help.evernote.com/hc/en-us/articles/360035153274-How-To-Import-Notes-and-Notebooks) and [Import content from other apps into Evernote](https://help.evernote.com/hc/en-us/articles/208314308-Import-content-from-other-apps-into-Evernote).
 - Sync folders. The desktop app can watch local folders and automatically import files placed there. See [Sync your local folders](https://help.evernote.com/hc/en-us/articles/209004967-Sync-your-local-folders-former-Import-Folder-feature).
@@ -244,7 +244,7 @@ Do not run the AppImage with `sudo`, from a service, or from a different user ac
 
 ### Sync Looks Stuck
 
-Evernote may lazy-download full note bodies and attachments, but after a successful login the note list, account state, logs, and Conduit SQLite databases should still show activity. If the app has been open for a long time and notes do not appear, run:
+Evernote may lazy-download full note bodies and attachments, but after a successful login the note list, account state, logs, and Conduit [SQLite](https://en.wikipedia.org/wiki/SQLite) databases should still show activity. If the app has been open for a long time and notes do not appear, run:
 
 ```bash
 npm run doctor
@@ -273,7 +273,7 @@ The pinned Electron runtime reports `audio/flac` as playable, but not the older 
 
 ## Storage Notes
 
-The desktop app uses SQLite for its main local data layer through Evernote's Conduit packages:
+The desktop app uses [SQLite](https://en.wikipedia.org/wiki/SQLite) for its main local data layer through Evernote's Conduit packages:
 
 - `better-sqlite3`
 - `conduit-storage-better-sqlite3`
@@ -291,7 +291,7 @@ If `XDG_CONFIG_HOME` is unset, the default path is:
 ~/.config/Evernote
 ```
 
-The main Conduit SQLite databases are under:
+The main Conduit [SQLite](https://en.wikipedia.org/wiki/SQLite) databases are under:
 
 ```text
 ~/.config/Evernote/conduit-storage/https%3A%2F%2Fwww.evernote.com/
