@@ -202,8 +202,19 @@ function makePatchableTagSuggestionChunkJs() {
     '(()=>{',
     'const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";',
     'const noteDetailCss=".eFghltw7oGwowX2A{background-color:var(--pesoNoteDetail-bg);min-width:450px;border-radius:var(--radius-sm);margin:var(--viewpane-padding)var(--viewpane-padding)var(--viewpane-padding)var(--spacing-0-5);box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden}";',
+    'function boronDragPatch(){if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}}',
     'void css;',
     'void noteDetailCss;',
+    'void boronDragPatch;',
+    '})();',
+  ].join('');
+}
+
+function makePatchableCommonEditorDragChunkJs() {
+  return [
+    '(()=>{',
+    'function commonEditorDragPatch(){if((0,F.Ld)()&&x.Z.isMac)n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}',
+    'void commonEditorDragPatch;',
     '})();',
   ].join('');
 }
@@ -288,6 +299,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '4701.js': makePatchableSourceUrlPillChunkJs(),
       '8078.js': makePatchableTagSuggestionChunkJs(),
       '9505.js': makePatchableTagSuggestionChunkJs(),
+      '3645.js': makePatchableCommonEditorDragChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
       '8634.js': makePatchableMainNavChunkJs(),
       'boronTabShell.js': makePatchableTabShellJs(),
@@ -349,6 +361,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedMainJs,
       /N=async t=>\{let a=await S\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
     );
+    assert.match(patchedMainJs, /t\?\.startDrag\(\{file:n\[0\]\|\|"",files:n,icon:/);
     assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
     assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
     assert.doesNotMatch(
@@ -456,6 +469,10 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedTagSuggestionChunkJs,
       /box-shadow:0 0 0 1px #000\s*;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden/,
     );
+    assert.match(
+      patchedTagSuggestionChunkJs,
+      /if\(e\.isBoron\)t\.payload\.event\.preventDefault\(\),n\.broker\.call\("boron\.actions\.setNativeFilesForDrag"/,
+    );
     assert.doesNotMatch(
       patchedTagSuggestionChunkJs,
       /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
@@ -465,6 +482,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedTagSuggestionChunkJs,
       /box-shadow:var\(--shadow-app-components-background-base\);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden/,
     );
+    assert.doesNotMatch(patchedTagSuggestionChunkJs, /e\.isBoron&&n\.boronEnv\.isMac/);
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
     assert.match(
       patchedSecondTagSuggestionChunkJs,
@@ -480,6 +498,13 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.doesNotMatch(patchedSecondTagSuggestionChunkJs, /transition-duration:\.1s/);
     assert.doesNotThrow(() => new Function(patchedSecondTagSuggestionChunkJs));
+    const patchedCommonEditorDragChunkJs = readMinimalAsarEntry(asarPath, '3645.js');
+    assert.match(
+      patchedCommonEditorDragChunkJs,
+      /if\(\(0,F\.Ld\)\(\)\)n\.preventDefault\(\),\(0,U\.HH\)\(t\.resources\.map/,
+    );
+    assert.doesNotMatch(patchedCommonEditorDragChunkJs, /&&x\.Z\.isMac/);
+    assert.doesNotThrow(() => new Function(patchedCommonEditorDragChunkJs));
     const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, '1957.js');
     assert.match(
       patchedDropdownItemChunkJs,

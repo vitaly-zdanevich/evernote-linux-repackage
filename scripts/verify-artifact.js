@@ -43,6 +43,10 @@ const REQUIRED_PATCH_MARKERS = [
     name: 'image resource copy writes native image clipboard data',
     value: 'n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)',
   },
+  {
+    name: 'resource drag exposes the first native file path',
+    value: 't?.startDrag({file:n[0]||"",files:n,icon:',
+  },
 ];
 
 const REQUIRED_LINUX_NATIVE_MODULES = [
@@ -249,6 +253,8 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     '172.js',
     '7839.js',
     '4701.js',
+    '3645.js',
+    '8078.js',
     '1957.js',
     '8634.js',
     '2002.js',
@@ -260,6 +266,8 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     /^main\.js$/,
     /^172\.js$/,
     /^7839\.js$/,
+    /^3645\.js$/,
+    /^8078\.js$/,
     /^1957\.js$/,
     /^8634\.js$/,
     /^2002\.js$/,
@@ -717,6 +725,30 @@ function verifyNoteDetailFrameLinePatch(asarPath) {
   process.stdout.write('Verified note detail frame line between notes list and editor is black.\n');
 }
 
+function verifyNativeResourceDragPatch(asarPath) {
+  const commonEditorRuntime = readAsarText(asarPath, '3645.js');
+  const boronRuntime = readAsarText(asarPath, '8078.js');
+
+  if (commonEditorRuntime.includes('(0,F.Ld)()&&x.Z.isMac')) {
+    throw new Error('Common editor resource drag still uses macOS-only native drag.');
+  }
+  if (boronRuntime.includes('if(e.isBoron&&n.boronEnv.isMac)')) {
+    throw new Error('Boron resource drag still uses macOS-only native drag.');
+  }
+  if (!commonEditorRuntime.includes('if((0,F.Ld)())n.preventDefault(),(0,U.HH)')) {
+    throw new Error('Missing native common editor resource drag marker.');
+  }
+  if (
+    !boronRuntime.includes(
+      'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag"',
+    )
+  ) {
+    throw new Error('Missing native Boron resource drag marker.');
+  }
+
+  process.stdout.write('Verified resource drag uses native file dragging on Linux.\n');
+}
+
 function verifyActiveTabTitlePatch(asarPath) {
   const runtime = readAsarText(asarPath, 'boronTabShell.js');
   const staleMarker =
@@ -857,6 +889,7 @@ function verifyArtifact(options) {
   verifySourceUrlPillWidthPatch(asarPath);
   verifyMultiSelectFloatingMenuPatch(asarPath);
   verifyNoteDetailFrameLinePatch(asarPath);
+  verifyNativeResourceDragPatch(asarPath);
   verifyActiveTabTitlePatch(asarPath);
   verifyTabButtonHitTargetPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);

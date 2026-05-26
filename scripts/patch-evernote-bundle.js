@@ -323,7 +323,15 @@ const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES =
   'let A=async(t,a)=>{let n=await S(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await S(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT =
-  'let A=async(t,a)=>{await(0,s.sleep)(100),t?.startDrag({files:await S(a),icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await S(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
+  'let A=async(t,a)=>{let n=await S(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await S(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
+const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
+  'if((0,F.Ld)()&&x.Z.isMac)n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
+const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT =
+  'if((0,F.Ld)())n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
+const BORON_MAC_ONLY_RESOURCE_DRAG_STYLES =
+  'if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
+const BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT =
+  'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -602,6 +610,22 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: 'main.js',
     search: NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES,
     replacementPrefix: NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT,
+  },
+  {
+    resultKey: 'nativeResourceDragFromCommonEditor',
+    description:
+      'used native resource file dragging on Linux instead of Chromium DownloadURL because dragging does not work on Linux without it',
+    filePath: '3645.js',
+    search: COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES,
+    replacementPrefix: COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT,
+  },
+  {
+    resultKey: 'nativeResourceDragFromBoron',
+    description:
+      'used native resource file dragging from the Boron editor because dragging does not work on Linux without it',
+    filePath: '8078.js',
+    search: BORON_MAC_ONLY_RESOURCE_DRAG_STYLES,
+    replacementPrefix: BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',
