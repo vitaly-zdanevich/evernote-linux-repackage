@@ -674,6 +674,23 @@ function verifyMultiSelectFloatingMenuPatch(asarPath) {
   process.stdout.write("Verified multi-select floating menu is visible on black theme.\n");
 }
 
+function verifyActiveTabTitlePatch(asarPath) {
+  const runtime = readAsarText(asarPath, "boronTabShell.js");
+  const staleMarker =
+    ".gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}";
+  const patchedMarker =
+    ".gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:#fff;font-weight:700;border-radius:24px}";
+
+  if (runtime.includes(staleMarker)) {
+    throw new Error("Unpatched active tab title color remains.");
+  }
+  if (!runtime.includes(patchedMarker)) {
+    throw new Error("Missing emphasized active tab title marker.");
+  }
+
+  process.stdout.write("Verified active tab title is white and bold.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -777,6 +794,7 @@ function verifyArtifact(options) {
   verifyDropdownItemHoverPatch(asarPath);
   verifySourceUrlPillWidthPatch(asarPath);
   verifyMultiSelectFloatingMenuPatch(asarPath);
+  verifyActiveTabTitlePatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);

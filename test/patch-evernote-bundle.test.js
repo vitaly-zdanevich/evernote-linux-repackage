@@ -245,6 +245,15 @@ function makePatchableMainNavChunkJs() {
   ].join("");
 }
 
+function makePatchableTabShellJs() {
+  return [
+    "(()=>{",
+    'const css=".tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
+    "void css;",
+    "})();",
+  ].join("");
+}
+
 function makePatchableNavStylesChunkJs() {
   return [
     "(()=>{",
@@ -284,6 +293,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "8078.js": makePatchableTagSuggestionChunkJs(),
       "1957.js": makePatchableDropdownItemChunkJs(),
       "8634.js": makePatchableMainNavChunkJs(),
+      "boronTabShell.js": makePatchableTabShellJs(),
       "2002.js": makePatchableNavStylesChunkJs(),
       "8453.js": makePatchableNavConstantsChunkJs(),
       "3014.js": makePatchableNoteListStylesChunkJs(),
@@ -514,6 +524,16 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /color:var\(--color-text-fill-inverted-enabled\)/,
     );
     assert.doesNotThrow(() => new Function(patchedMainNavChunkJs));
+    const patchedTabShellJs = readMinimalAsarEntry(asarPath, "boronTabShell.js");
+    assert.match(
+      patchedTabShellJs,
+      /\.gger9Drdmhogq7zI\{background:var\(--color-surface-fill-primary-enabled\);color:#fff;font-weight:700;border-radius:24px\}/,
+    );
+    assert.doesNotMatch(
+      patchedTabShellJs,
+      /\.gger9Drdmhogq7zI\{background:var\(--color-surface-fill-primary-enabled\);color:var\(--color-text-fill-tertiary-enabled\);border-radius:24px\}/,
+    );
+    assert.doesNotThrow(() => new Function(patchedTabShellJs));
     const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");
     assert.match(
       patchedNavStylesChunkJs,
