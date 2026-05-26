@@ -300,14 +300,10 @@ const EDITOR_NOTE_LAYOUT_MARGIN_PATTERN =
   /h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40/g;
 const EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN =
   /h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40/g;
-const TAG_SUGGESTION_HOVER_PATTERN =
-  /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/g;
-const TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN =
-  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/g;
-const TAG_SUGGESTION_HOVER_TRANSITION_PATTERN =
-  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/g;
-const TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN =
-  /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/g;
+const TAG_SUGGESTION_HOVER_STYLES =
+  "background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out";
+const TAG_SUGGESTION_HOVER_REPLACEMENT =
+  "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:0s ;transition-timing-function:ease-in-out";
 const DROPDOWN_ITEM_HOVER_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/g;
 const DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN =
@@ -326,15 +322,14 @@ const MULTI_SELECT_FLOATING_MENU_STYLES =
   ".cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:var(--shadow-xl);width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:var(--color-surface-fill-secondarybrand-enabled);flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:var(--color-text-fill-inverted-enabled);font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.a9h8bbz8LYMfS910{background-color:var(--color-surface-stroke-tertiary-enabled);align-items:flex-start;width:1px;height:20px;display:flex}";
 const MULTI_SELECT_FLOATING_MENU_REPLACEMENT =
   ".cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:0 0 0 1px #444,0 8px 24px #000;width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:#1f1f1f;flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:#fff;font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.smD3K8Nh5kcQyNGr,.smD3K8Nh5kcQyNGr *{color:#fff!important;fill:#fff!important;stroke:#fff!important}.a9h8bbz8LYMfS910{background-color:#555;align-items:flex-start;width:1px;height:20px;display:flex}";
-const COLLAPSED_NAV_STYLES_FILE_PATTERN = /^2002\.js$/;
-const COLLAPSED_NAV_PADDING_TOKEN_PATTERN =
-  /--nav-collapsed-padding:var\(--spacing-[01]-5\)var\(--spacing-2\);/g;
-const COLLAPSED_NAV_PADDING_TOKEN_ALREADY_PATCHED_PATTERN =
-  /--nav-collapsed-padding:var\(--spacing-1-5\)0\s*;/g;
-const COLLAPSED_NAV_ITEM_PADDING_PATTERN =
-  /padding:var\(--spacing-[01]-5\)var\(--spacing-2\);justify-content:center;/g;
-const COLLAPSED_NAV_ITEM_PADDING_ALREADY_PATCHED_PATTERN =
-  /padding:var\(--spacing-1-5\)0;justify-content:center;\s*/g;
+const COLLAPSED_NAV_PADDING_TOKEN_STYLES =
+  "--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);";
+const COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT =
+  "--nav-collapsed-padding:var(--spacing-1-5)0;";
+const COLLAPSED_NAV_ITEM_PADDING_STYLES =
+  "padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;";
+const COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT =
+  "padding:var(--spacing-1-5)0;justify-content:center;";
 
 const patches = [
   {
@@ -528,28 +523,9 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: "visibleTagSuggestionHover",
     description: "made tag suggestion hover background visible on black theme",
-    filePattern: /\.js$/,
-    pattern: TAG_SUGGESTION_HOVER_PATTERN,
-    replacementForMatch: (match) =>
-      sameLengthReplacement(
-        match,
-        "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;",
-      ),
-    alreadyPatchedPattern: TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN,
-    replacePattern: true,
-  },
-  {
-    resultKey: "instantTagSuggestionHover",
-    description: "removed tag suggestion hover transition delay",
-    filePattern: /\.js$/,
-    pattern: TAG_SUGGESTION_HOVER_TRANSITION_PATTERN,
-    replacementForMatch: (match) =>
-      sameLengthReplacement(
-        match,
-        "background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:0s ;transition-timing-function:ease-in-out",
-      ),
-    alreadyPatchedPattern: TAG_SUGGESTION_HOVER_TRANSITION_ALREADY_PATCHED_PATTERN,
-    replacePattern: true,
+    filePath: "8078.js",
+    search: TAG_SUGGESTION_HOVER_STYLES,
+    replacementPrefix: TAG_SUGGESTION_HOVER_REPLACEMENT,
   },
   {
     resultKey: "visibleDropdownItemHover",
@@ -614,22 +590,16 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: "expandedCollapsedNavPaddingToken",
     description: "increased collapsed sidebar icon rail vertical padding token and removed horizontal padding",
-    filePattern: COLLAPSED_NAV_STYLES_FILE_PATTERN,
-    pattern: COLLAPSED_NAV_PADDING_TOKEN_PATTERN,
-    replacementForMatch: (match) =>
-      sameLengthReplacement(match, "--nav-collapsed-padding:var(--spacing-1-5)0;"),
-    alreadyPatchedPattern: COLLAPSED_NAV_PADDING_TOKEN_ALREADY_PATCHED_PATTERN,
-    replacePattern: true,
+    filePath: "2002.js",
+    search: COLLAPSED_NAV_PADDING_TOKEN_STYLES,
+    replacementPrefix: COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT,
   },
   {
     resultKey: "expandedCollapsedNavItemPadding",
     description: "increased collapsed sidebar icon rail item vertical padding and removed horizontal padding",
-    filePattern: COLLAPSED_NAV_STYLES_FILE_PATTERN,
-    pattern: COLLAPSED_NAV_ITEM_PADDING_PATTERN,
-    replacementForMatch: (match) =>
-      sameLengthReplacement(match, "padding:var(--spacing-1-5)0;justify-content:center;"),
-    alreadyPatchedPattern: COLLAPSED_NAV_ITEM_PADDING_ALREADY_PATCHED_PATTERN,
-    replacePattern: true,
+    filePath: "2002.js",
+    search: COLLAPSED_NAV_ITEM_PADDING_STYLES,
+    replacementPrefix: COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT,
   },
   {
     resultKey: "thinnedCollapsedNavCssWidth",
