@@ -39,6 +39,10 @@ const REQUIRED_PATCH_MARKERS = [
     name: 'browser window startup background is black',
     value: 'backgroundColor:"#000000"',
   },
+  {
+    name: 'image resource copy writes native image clipboard data',
+    value: 'n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)',
+  },
 ];
 
 const REQUIRED_LINUX_NATIVE_MODULES = [

@@ -88,6 +88,7 @@ function makePatchableMainJs() {
     '}',
     'const h={app:{quit(){}}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
+    'let A=async(t,a)=>{let n=await S(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await S(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
     'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
     'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
   ].join('');
@@ -340,8 +341,20 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedMainJs,
       /backgroundColor:"#000000"\s+,backgroundMaterial:"none",vibrancy:"fullscreen-ui"/,
     );
+    assert.match(
+      patchedMainJs,
+      /n\.isEmpty\(\)\?o\?\.writeFilePaths\(a\):l\.clipboard\.writeImage\(n\)/,
+    );
+    assert.match(
+      patchedMainJs,
+      /N=async t=>\{let a=await S\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
+    );
     assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
     assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
+    assert.doesNotMatch(
+      patchedMainJs,
+      /N=async t=>\{let a=await S\(t\);o\?\.writeFilePaths\(a\)\}/,
+    );
     assert.doesNotMatch(
       patchedMainJs,
       /this\.hidden=!0,this\.window\.hide\(\)\}\}\),this\.window\.on\("show"/,

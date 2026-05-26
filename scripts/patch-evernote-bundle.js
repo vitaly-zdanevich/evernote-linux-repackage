@@ -320,6 +320,10 @@ const NOTE_DETAIL_FRAME_SHADOW_STYLES =
   'box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
 const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
   'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
+const NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES =
+  'let A=async(t,a)=>{let n=await S(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await S(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
+const NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT =
+  'let A=async(t,a)=>{await(0,s.sleep)(100),t?.startDrag({files:await S(a),icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await S(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -590,6 +594,13 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8078.js',
     search: NOTE_DETAIL_FRAME_SHADOW_STYLES,
     replacementPrefix: NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT,
+  },
+  {
+    resultKey: 'nativeImageResourceClipboard',
+    description: 'copied image resources as native image clipboard data',
+    filePath: 'main.js',
+    search: NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES,
+    replacementPrefix: NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',
