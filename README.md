@@ -22,6 +22,12 @@ Evernote's bundled auto-updater and in-app force-update checks are disabled by t
 
 If you use Evernote on Linux, consider writing to Evernote and asking for an official Linux desktop client. This project is also a practical confirmation that the current Electron-based desktop app can run on Linux with Linux-native Electron and rebuilt native modules.
 
+## Screenshots
+
+![Evernote import settings](docs/screenshots/import-settings.webp)
+
+![Evernote export dialog](docs/screenshots/export-dialog.webp)
+
 ## Differences From Evernote Web
 
 This project runs Evernote's desktop client code, so it can expose desktop-only or desktop-first workflows that are missing or less complete in Evernote Web:
