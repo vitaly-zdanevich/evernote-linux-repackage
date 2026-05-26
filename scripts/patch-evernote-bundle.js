@@ -597,7 +597,8 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   },
   {
     resultKey: 'nativeImageResourceClipboard',
-    description: 'copied image resources as native image clipboard data',
+    description:
+      'copied image resources as native image clipboard data because image copy does not work on Linux without it',
     filePath: 'main.js',
     search: NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES,
     replacementPrefix: NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT,
