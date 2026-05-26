@@ -524,9 +524,10 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'visibleTagSuggestionHover',
     description: 'made tag suggestion hover background visible on black theme',
-    filePath: '8078.js',
+    filePattern: /\.js$/,
     search: TAG_SUGGESTION_HOVER_STYLES,
     replacementPrefix: TAG_SUGGESTION_HOVER_REPLACEMENT,
+    replaceAll: true,
   },
   {
     resultKey: 'visibleDropdownItemHover',

@@ -286,6 +286,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '7839.js': makePatchableAppThemeChunkJs(),
       '4701.js': makePatchableSourceUrlPillChunkJs(),
       '8078.js': makePatchableTagSuggestionChunkJs(),
+      '9505.js': makePatchableTagSuggestionChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
       '8634.js': makePatchableMainNavChunkJs(),
       'boronTabShell.js': makePatchableTabShellJs(),
@@ -429,6 +430,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.match(patchedEditorCss, /\.formatted-highlight\{background-color:#ff0\}/);
     const patchedTagSuggestionChunkJs = readMinimalAsarEntry(asarPath, '8078.js');
+    const patchedSecondTagSuggestionChunkJs = readMinimalAsarEntry(asarPath, '9505.js');
     assert.match(
       patchedTagSuggestionChunkJs,
       /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
@@ -443,6 +445,20 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.doesNotMatch(patchedTagSuggestionChunkJs, /transition-duration:\.1s/);
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
+    assert.match(
+      patchedSecondTagSuggestionChunkJs,
+      /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
+    );
+    assert.doesNotMatch(
+      patchedSecondTagSuggestionChunkJs,
+      /background-color:var\(--color-surface-fill-primary-hover\)/,
+    );
+    assert.match(
+      patchedSecondTagSuggestionChunkJs,
+      /transition-duration:0s\s*;transition-timing-function:ease-in-out/,
+    );
+    assert.doesNotMatch(patchedSecondTagSuggestionChunkJs, /transition-duration:\.1s/);
+    assert.doesNotThrow(() => new Function(patchedSecondTagSuggestionChunkJs));
     const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, '1957.js');
     assert.match(
       patchedDropdownItemChunkJs,
