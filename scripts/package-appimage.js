@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-"use strict";
+'use strict';
 
-const childProcess = require("child_process");
-const fs = require("fs");
-const path = require("path");
+const childProcess = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
-const ROOT = path.resolve(__dirname, "..");
-const DIST_DIR = path.join(ROOT, "dist");
-const DEFAULT_APP_DIR = path.join(DIST_DIR, "AppDir");
-const TEMPLATE_DIR = path.join(__dirname, "templates");
-const APPIMAGE_RUNTIME_LIB_DIR = path.join("usr", "lib", "evernote", "appimage-libs");
+const ROOT = path.resolve(__dirname, '..');
+const DIST_DIR = path.join(ROOT, 'dist');
+const DEFAULT_APP_DIR = path.join(DIST_DIR, 'AppDir');
+const TEMPLATE_DIR = path.join(__dirname, 'templates');
+const APPIMAGE_RUNTIME_LIB_DIR = path.join('usr', 'lib', 'evernote', 'appimage-libs');
 const BUNDLED_RUNTIME_LIBRARIES = [
   {
-    soname: "libsecret-1.so.0",
-    reason: "keytar login secret storage",
+    soname: 'libsecret-1.so.0',
+    reason: 'keytar login secret storage',
   },
 ];
 const DEFAULT_TARGET_ARCH = normalizeTargetArch(
@@ -25,11 +25,11 @@ function log(message) {
 }
 
 function run(command, args, options = {}) {
-  log(`$ ${[command, ...args].join(" ")}`);
+  log(`$ ${[command, ...args].join(' ')}`);
   const result = childProcess.spawnSync(command, args, {
     cwd: options.cwd || ROOT,
     env: { ...process.env, ...(options.env || {}) },
-    stdio: "inherit",
+    stdio: 'inherit',
   });
   if (result.error) {
     throw result.error;
@@ -40,33 +40,33 @@ function run(command, args, options = {}) {
 }
 
 function commandPath(command) {
-  const result = childProcess.spawnSync("sh", ["-c", 'command -v "$1"', "sh", command], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
+  const result = childProcess.spawnSync('sh', ['-c', 'command -v "$1"', 'sh', command], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
   });
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
 function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function candidateLibraryDirs() {
   const dirs = new Set();
-  for (const entry of String(process.env.LD_LIBRARY_PATH || "").split(":")) {
+  for (const entry of String(process.env.LD_LIBRARY_PATH || '').split(':')) {
     if (entry) {
       dirs.add(entry);
     }
   }
   for (const dir of [
-    "/lib",
-    "/lib64",
-    "/usr/lib",
-    "/usr/lib64",
-    "/lib/x86_64-linux-gnu",
-    "/usr/lib/x86_64-linux-gnu",
-    "/lib/aarch64-linux-gnu",
-    "/usr/lib/aarch64-linux-gnu",
+    '/lib',
+    '/lib64',
+    '/usr/lib',
+    '/usr/lib64',
+    '/lib/x86_64-linux-gnu',
+    '/usr/lib/x86_64-linux-gnu',
+    '/lib/aarch64-linux-gnu',
+    '/usr/lib/aarch64-linux-gnu',
   ]) {
     dirs.add(dir);
   }
@@ -74,14 +74,14 @@ function candidateLibraryDirs() {
 }
 
 function ldconfigLibraryPaths(soname) {
-  const ldconfig = commandPath("ldconfig");
+  const ldconfig = commandPath('ldconfig');
   if (!ldconfig) {
     return [];
   }
 
-  const result = childProcess.spawnSync(ldconfig, ["-p"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"],
+  const result = childProcess.spawnSync(ldconfig, ['-p'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
   });
   if (result.status !== 0) {
     return [];
@@ -92,7 +92,7 @@ function ldconfigLibraryPaths(soname) {
     .split(/\r?\n/)
     .map((line) => {
       const match = line.match(pattern);
-      return match ? match[1].trim() : "";
+      return match ? match[1].trim() : '';
     })
     .filter(Boolean);
 }
@@ -126,43 +126,47 @@ function resetDir(dir) {
 }
 
 function normalizeTargetArch(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (["x64", "x86_64", "amd64"].includes(normalized)) {
-    return "x64";
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (['x64', 'x86_64', 'amd64'].includes(normalized)) {
+    return 'x64';
   }
-  if (["arm64", "aarch64"].includes(normalized)) {
-    return "arm64";
+  if (['arm64', 'aarch64'].includes(normalized)) {
+    return 'arm64';
   }
   return normalized;
 }
 
 function appImageArchForTargetArch(targetArch) {
-  if (targetArch === "x64") {
-    return "x86_64";
+  if (targetArch === 'x64') {
+    return 'x86_64';
   }
-  if (targetArch === "arm64") {
-    return "aarch64";
+  if (targetArch === 'arm64') {
+    return 'aarch64';
   }
   throw new Error(`Unsupported target architecture: ${targetArch}`);
 }
 
 function normalizeAppImageArch(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (["x64", "x86_64", "amd64"].includes(normalized)) {
-    return "x86_64";
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase();
+  if (['x64', 'x86_64', 'amd64'].includes(normalized)) {
+    return 'x86_64';
   }
-  if (["arm64", "aarch64"].includes(normalized)) {
-    return "aarch64";
+  if (['arm64', 'aarch64'].includes(normalized)) {
+    return 'aarch64';
   }
   throw new Error(`Unsupported AppImage architecture: ${value}`);
 }
 
 function readBuildInfo() {
-  const buildInfoPath = path.join(DIST_DIR, "build-info.json");
+  const buildInfoPath = path.join(DIST_DIR, 'build-info.json');
   if (!fs.existsSync(buildInfoPath)) {
     return null;
   }
-  return JSON.parse(fs.readFileSync(buildInfoPath, "utf8"));
+  return JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
 }
 
 function readBuildInfoPortDir() {
@@ -198,7 +202,7 @@ function parseAsarHeader(asarPath) {
 function readAsarText(asarPath, filePath) {
   const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
   let entry = header;
-  for (const part of filePath.split("/")) {
+  for (const part of filePath.split('/')) {
     entry = entry.files && entry.files[part];
     if (!entry) {
       throw new Error(`ASAR entry not found: ${filePath}`);
@@ -209,9 +213,9 @@ function readAsarText(asarPath, filePath) {
 }
 
 function getEvernoteVersion(portDir) {
-  const asarPath = path.join(portDir, "resources", "app.asar");
-  const packageJson = JSON.parse(readAsarText(asarPath, "package.json"));
-  return packageJson.version || "unknown";
+  const asarPath = path.join(portDir, 'resources', 'app.asar');
+  const packageJson = JSON.parse(readAsarText(asarPath, 'package.json'));
+  return packageJson.version || 'unknown';
 }
 
 function writeFileExecutable(filePath, content) {
@@ -220,32 +224,32 @@ function writeFileExecutable(filePath, content) {
 }
 
 function readTemplate(fileName) {
-  return fs.readFileSync(path.join(TEMPLATE_DIR, fileName), "utf8");
+  return fs.readFileSync(path.join(TEMPLATE_DIR, fileName), 'utf8');
 }
 
 function convertIcon(portDir, appDir) {
-  const sourceIcon = path.join(portDir, "resources", "static", "win", "icons", "icon.ico");
+  const sourceIcon = path.join(portDir, 'resources', 'static', 'win', 'icons', 'icon.ico');
   if (!fs.existsSync(sourceIcon)) {
     throw new Error(`Evernote icon not found: ${sourceIcon}`);
   }
 
-  const magick = commandPath("magick");
-  const convert = commandPath("convert");
+  const magick = commandPath('magick');
+  const convert = commandPath('convert');
   const converter = magick || convert;
   if (!converter) {
     throw new Error("ImageMagick is required to convert Evernote's ICO icon to PNG.");
   }
 
-  const rootIcon = path.join(appDir, "evernote.png");
+  const rootIcon = path.join(appDir, 'evernote.png');
   const hicolorIcon = path.join(
     appDir,
-    "usr",
-    "share",
-    "icons",
-    "hicolor",
-    "256x256",
-    "apps",
-    "evernote.png",
+    'usr',
+    'share',
+    'icons',
+    'hicolor',
+    '256x256',
+    'apps',
+    'evernote.png',
   );
   ensureDir(path.dirname(hicolorIcon));
 
@@ -273,7 +277,7 @@ function bundleRuntimeLibraries(appDir) {
 }
 
 function appRunScript() {
-  return readTemplate("appimage-AppRun.sh");
+  return readTemplate('appimage-AppRun.sh');
 }
 
 function resolvePortableSourceDir(portDir) {
@@ -284,15 +288,15 @@ function prepareAppDir({ portDir, appDir }) {
   const resolvedPortDir = resolvePortableSourceDir(portDir);
   const resolvedAppDir = path.resolve(appDir);
 
-  if (!fs.existsSync(path.join(resolvedPortDir, "evernote"))) {
+  if (!fs.existsSync(path.join(resolvedPortDir, 'evernote'))) {
     throw new Error(`Portable Evernote launcher not found: ${resolvedPortDir}/evernote`);
   }
 
   resetDir(resolvedAppDir);
 
-  const appLibDir = path.join(resolvedAppDir, "usr", "lib", "evernote");
-  const appBinDir = path.join(resolvedAppDir, "usr", "bin");
-  const applicationsDir = path.join(resolvedAppDir, "usr", "share", "applications");
+  const appLibDir = path.join(resolvedAppDir, 'usr', 'lib', 'evernote');
+  const appBinDir = path.join(resolvedAppDir, 'usr', 'bin');
+  const applicationsDir = path.join(resolvedAppDir, 'usr', 'share', 'applications');
   ensureDir(appBinDir);
   ensureDir(applicationsDir);
 
@@ -302,27 +306,27 @@ function prepareAppDir({ portDir, appDir }) {
     dereference: false,
   });
 
-  fs.symlinkSync("../lib/evernote/evernote", path.join(appBinDir, "evernote"));
+  fs.symlinkSync('../lib/evernote/evernote', path.join(appBinDir, 'evernote'));
 
   const desktopEntry = [
-    "[Desktop Entry]",
-    "Type=Application",
-    "Name=Evernote",
-    "Comment=Evernote desktop client",
-    "Exec=evernote %u",
-    "Icon=evernote",
-    "Terminal=false",
-    "Categories=Office;Utility;",
-    "MimeType=x-scheme-handler/evernote;",
-    "StartupWMClass=Evernote",
-    "",
-  ].join("\n");
+    '[Desktop Entry]',
+    'Type=Application',
+    'Name=Evernote',
+    'Comment=Evernote desktop client',
+    'Exec=evernote %u',
+    'Icon=evernote',
+    'Terminal=false',
+    'Categories=Office;Utility;',
+    'MimeType=x-scheme-handler/evernote;',
+    'StartupWMClass=Evernote',
+    '',
+  ].join('\n');
 
-  fs.writeFileSync(path.join(resolvedAppDir, "evernote.desktop"), desktopEntry);
-  fs.writeFileSync(path.join(applicationsDir, "evernote.desktop"), desktopEntry);
+  fs.writeFileSync(path.join(resolvedAppDir, 'evernote.desktop'), desktopEntry);
+  fs.writeFileSync(path.join(applicationsDir, 'evernote.desktop'), desktopEntry);
 
   bundleRuntimeLibraries(resolvedAppDir);
-  writeFileExecutable(path.join(resolvedAppDir, "AppRun"), appRunScript());
+  writeFileExecutable(path.join(resolvedAppDir, 'AppRun'), appRunScript());
 
   convertIcon(resolvedPortDir, resolvedAppDir);
 
@@ -333,7 +337,7 @@ function resolveAppImageTool() {
   if (process.env.APPIMAGETOOL) {
     return path.resolve(process.env.APPIMAGETOOL);
   }
-  return commandPath("appimagetool");
+  return commandPath('appimagetool');
 }
 
 function packageAppImage({ portDir, appDir, output, appDirOnly }) {
@@ -349,8 +353,7 @@ function packageAppImage({ portDir, appDir, output, appDirOnly }) {
     process.env.APPIMAGE_ARCH || appImageArchForTargetArch(targetArch),
   );
   const version = getEvernoteVersion(resolvedPortDir);
-  const outputPath =
-    output || path.join(DIST_DIR, `Evernote-${version}-${appImageArch}.AppImage`);
+  const outputPath = output || path.join(DIST_DIR, `Evernote-${version}-${appImageArch}.AppImage`);
   const preparedAppDir = prepareAppDir({ portDir: resolvedPortDir, appDir });
 
   if (appDirOnly) {
@@ -361,7 +364,7 @@ function packageAppImage({ portDir, appDir, output, appDirOnly }) {
   const appImageTool = resolveAppImageTool();
   if (!appImageTool) {
     throw new Error(
-      "appimagetool not found. Set APPIMAGETOOL=/path/to/AppRun or install appimagetool.",
+      'appimagetool not found. Set APPIMAGETOOL=/path/to/AppRun or install appimagetool.',
     );
   }
 
@@ -371,7 +374,7 @@ function packageAppImage({ portDir, appDir, output, appDirOnly }) {
     if (!fs.existsSync(runtimeFile)) {
       throw new Error(`AppImage runtime file not found: ${runtimeFile}`);
     }
-    appImageToolArgs.push("--runtime-file", runtimeFile);
+    appImageToolArgs.push('--runtime-file', runtimeFile);
   }
   appImageToolArgs.push(preparedAppDir, outputPath);
 
@@ -397,13 +400,13 @@ function parseArgs(argv) {
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--appdir-only") {
+    if (arg === '--appdir-only') {
       options.appDirOnly = true;
-    } else if (arg === "--port-dir") {
+    } else if (arg === '--port-dir') {
       options.portDir = argv[++index];
-    } else if (arg === "--appdir") {
+    } else if (arg === '--appdir') {
       options.appDir = argv[++index];
-    } else if (arg === "--output") {
+    } else if (arg === '--output') {
       options.output = argv[++index];
     } else {
       throw new Error(`Unknown argument: ${arg}`);

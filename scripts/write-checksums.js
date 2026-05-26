@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-"use strict";
+'use strict';
 
-const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
-const ROOT = path.resolve(__dirname, "..");
-const DIST_DIR = path.join(ROOT, "dist");
+const ROOT = path.resolve(__dirname, '..');
+const DIST_DIR = path.join(ROOT, 'dist');
 
 function sha256File(filePath) {
-  const hash = crypto.createHash("sha256");
+  const hash = crypto.createHash('sha256');
   hash.update(fs.readFileSync(filePath));
-  return hash.digest("hex");
+  return hash.digest('hex');
 }
 
 function findAppImages(dir) {
@@ -20,12 +20,12 @@ function findAppImages(dir) {
   }
   return fs
     .readdirSync(dir)
-    .filter((name) => name.endsWith(".AppImage"))
+    .filter((name) => name.endsWith('.AppImage'))
     .sort()
     .map((name) => path.join(dir, name));
 }
 
-function writeChecksums({ dir = DIST_DIR, output = path.join(DIST_DIR, "SHA256SUMS") } = {}) {
+function writeChecksums({ dir = DIST_DIR, output = path.join(DIST_DIR, 'SHA256SUMS') } = {}) {
   const resolvedDir = path.resolve(dir);
   const appImages = findAppImages(resolvedDir);
   if (appImages.length === 0) {
@@ -34,7 +34,7 @@ function writeChecksums({ dir = DIST_DIR, output = path.join(DIST_DIR, "SHA256SU
 
   const lines = appImages.map((filePath) => `${sha256File(filePath)}  ${path.basename(filePath)}`);
   fs.mkdirSync(path.dirname(output), { recursive: true });
-  fs.writeFileSync(output, `${lines.join("\n")}\n`);
+  fs.writeFileSync(output, `${lines.join('\n')}\n`);
   process.stdout.write(`Wrote ${output}\n`);
   return output;
 }
@@ -43,9 +43,9 @@ function parseArgs(argv) {
   const options = {};
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--dir") {
+    if (arg === '--dir') {
       options.dir = argv[++index];
-    } else if (arg === "--output") {
+    } else if (arg === '--output') {
       options.output = argv[++index];
     } else {
       throw new Error(`Unknown argument: ${arg}`);

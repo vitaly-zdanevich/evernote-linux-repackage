@@ -1,15 +1,15 @@
-"use strict";
+'use strict';
 
-const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
-const test = require("node:test");
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const test = require('node:test');
 
-const { patches, patchEvernoteBundle } = require("../scripts/patch-evernote-bundle");
+const { patches, patchEvernoteBundle } = require('../scripts/patch-evernote-bundle');
 
 function makeTempDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "evernote-asar-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'evernote-asar-test-'));
 }
 
 function writeMinimalAsar(asarPath, files) {
@@ -18,7 +18,7 @@ function writeMinimalAsar(asarPath, files) {
   const contents = [];
 
   function setHeaderEntry(fileName, entry) {
-    const parts = fileName.split("/");
+    const parts = fileName.split('/');
     let current = header;
     for (const part of parts.slice(0, -1)) {
       current.files[part] ||= { files: {} };
@@ -62,7 +62,7 @@ function readMinimalAsarEntry(asarPath, fileName) {
   const jsonSize = buffer.readUInt32LE(12);
   const header = JSON.parse(buffer.subarray(16, 16 + jsonSize).toString());
   let entry = header;
-  for (const part of fileName.split("/")) {
+  for (const part of fileName.split('/')) {
     entry = entry.files && entry.files[part];
   }
   assert.ok(entry, `Missing ASAR test entry: ${fileName}`);
@@ -72,27 +72,27 @@ function readMinimalAsarEntry(asarPath, fileName) {
 
 function makePatchableMainJs() {
   return [
-    "const E={warn(){}};",
+    'const E={warn(){}};',
     'const f={info(){}};',
     'const m={InAppForceUpdateChannel:{public:"public"},InAppForceUpdateFeedbackLevel:{none:"none"}};',
-    "class MainWindowTabManager {",
-    "preloadWarmTab(){if(this.warmTab||this.isPreloadingWarmTab)return;this.isPreloadingWarmTab=!0;}",
-    "}",
-    "class S {",
+    'class MainWindowTabManager {',
+    'preloadWarmTab(){if(this.warmTab||this.isPreloadingWarmTab)return;this.isPreloadingWarmTab=!0;}',
+    '}',
+    'class S {',
     'init(t,a){if(this._initialized)return void E.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0,this.autoUpdater.logger=E,this.autoUpdater.autoDownload=!1}',
-    "async _checkForUpdates(){try{let t=this._promiseCheckForUpdates;if(!t){let a=()=>{this._promiseCheckForUpdates=void 0};t=this.autoUpdater.checkForUpdates().then(()=>({updateAvailable:true}))}return t}catch(t){return {}}}",
-    "}",
+    'async _checkForUpdates(){try{let t=this._promiseCheckForUpdates;if(!t){let a=()=>{this._promiseCheckForUpdates=void 0};t=this.autoUpdater.checkForUpdates().then(()=>({updateAvailable:true}))}return t}catch(t){return {}}}',
+    '}',
     'function pendingUpdatePatch(){let t=null;if((0,i.isNullish)(t))throw Error("no pending update");return t}',
     'const flacMime="audio/x-flac";',
-    "class T {",
+    'class T {',
     'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;let{feedbackLevel:a}=this;this.currentChannel=t}',
     'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";return {url:t,platform:a,release:n}}',
-    "}",
-    "const h={app:{quit(){}}};",
+    '}',
+    'const h={app:{quit(){}}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
-    "function mainWindowClosePatch(){this.window.on(\"close\",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on(\"show\",()=>{})}",
-    "function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}",
-  ].join("");
+    'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
+    'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
+  ].join('');
 }
 
 function makePatchableMainResourceProxyJs() {
@@ -141,54 +141,54 @@ function makePatchableAudioPlayerChunkJs() {
 
 function makePatchableAppThemeChunkJs() {
   const runtimeCss = [
-    ":root,[data-color-theme=light]{",
-    "--color-background-base-fill-primary:var(--colors-grey-100);",
-    "--color-background-base-fill-secondary:var(--colors-grey-99);",
-    "--color-surface-fill-primary-enabled:var(--colors-grey-100);",
-    "--color-card-base-fill-enabled:var(--colors-grey-100);",
-    "--color-button-base-fill-primary-default:var(--colors-secondary-blue-400);",
-    "--color-note_list-base-stroke-enabled:var(--colors-grey-90);",
-    "--color-text-fill-primary-enabled:var(--colors-grey-8);",
-    "--home-widget-pp-background-z-index:-1;",
-    "}[data-color-theme=dark]{",
-    "--color-background-base-fill-primary:var(--colors-grey-8);",
-    "--color-surface-fill-primary-enabled:var(--colors-grey-8);",
-    "--color-iconbutton-base-fill-primary-hover:var(--colors-grey-opacitywhite08);",
-    "--color-text-fill-primary-enabled:var(--colors-grey-100);",
-    "}",
-  ].join("");
+    ':root,[data-color-theme=light]{',
+    '--color-background-base-fill-primary:var(--colors-grey-100);',
+    '--color-background-base-fill-secondary:var(--colors-grey-99);',
+    '--color-surface-fill-primary-enabled:var(--colors-grey-100);',
+    '--color-card-base-fill-enabled:var(--colors-grey-100);',
+    '--color-button-base-fill-primary-default:var(--colors-secondary-blue-400);',
+    '--color-note_list-base-stroke-enabled:var(--colors-grey-90);',
+    '--color-text-fill-primary-enabled:var(--colors-grey-8);',
+    '--home-widget-pp-background-z-index:-1;',
+    '}[data-color-theme=dark]{',
+    '--color-background-base-fill-primary:var(--colors-grey-8);',
+    '--color-surface-fill-primary-enabled:var(--colors-grey-8);',
+    '--color-iconbutton-base-fill-primary-hover:var(--colors-grey-opacitywhite08);',
+    '--color-text-fill-primary-enabled:var(--colors-grey-100);',
+    '}',
+  ].join('');
   const sourceContent = [
-    ".source-theme{",
-    "--color-calendar_block-highlight-fill-task-enabled:var(--colors-secondary-purple-300);",
-    "}",
-  ].join("");
+    '.source-theme{',
+    '--color-calendar_block-highlight-fill-task-enabled:var(--colors-secondary-purple-300);',
+    '}',
+  ].join('');
 
   return [
-    "(()=>{",
-    "const A={push(){},locals:{}};",
-    "const o={id:7839};",
+    '(()=>{',
+    'const A={push(){},locals:{}};',
+    'const o={id:7839};',
     `A.push([o.id,${JSON.stringify(runtimeCss)},"",{version:3,sources:["webpack://theme.css"],sourcesContent:[${JSON.stringify(sourceContent)}],sourceRoot:""}]);`,
-    "})();",
-  ].join("");
+    '})();',
+  ].join('');
 }
 
 function makePatchableEditorCss() {
   return [
-    "body{",
-    "--color-background-fill-primary:var(--colors-grey-100);",
-    "--color-background-fill-secondary:var(--colors-grey-97);",
-    "--color-surface-fill-tertiary-enabled:var(--colors-grey-95);",
-    "}",
-    "body ::selection{background:rgba(33,133,231,.3)}",
-    "body.darkMode ::selection{background:rgba(33,133,231,.25)}",
-    ".linkEditSelection{background:rgba(33,133,231,.3)}",
-    "body.darkMode .linkEditSelection{background:rgba(33,133,231,.25)}",
-    "en-note{padding-left:48px;padding-right:48px}",
-    ".title-editor{padding-left:48px;padding-right:48px}",
-    "en-note.peso{background-color:var(--color-background-fill-primary)}",
-    "body.darkMode en-note.peso{background-color:#262626;color:#e6e6e6}",
-    ".formatted-highlight{background-color:#ff0}",
-  ].join("");
+    'body{',
+    '--color-background-fill-primary:var(--colors-grey-100);',
+    '--color-background-fill-secondary:var(--colors-grey-97);',
+    '--color-surface-fill-tertiary-enabled:var(--colors-grey-95);',
+    '}',
+    'body ::selection{background:rgba(33,133,231,.3)}',
+    'body.darkMode ::selection{background:rgba(33,133,231,.25)}',
+    '.linkEditSelection{background:rgba(33,133,231,.3)}',
+    'body.darkMode .linkEditSelection{background:rgba(33,133,231,.25)}',
+    'en-note{padding-left:48px;padding-right:48px}',
+    '.title-editor{padding-left:48px;padding-right:48px}',
+    'en-note.peso{background-color:var(--color-background-fill-primary)}',
+    'body.darkMode en-note.peso{background-color:#262626;color:#e6e6e6}',
+    '.formatted-highlight{background-color:#ff0}',
+  ].join('');
 }
 
 function makePatchableEditorNoteLayoutJs({ swappedNames = false } = {}) {
@@ -200,109 +200,104 @@ function makePatchableEditorNoteLayoutJs({ swappedNames = false } = {}) {
 
 function makePatchableTagSuggestionChunkJs() {
   return [
-    "(()=>{",
+    '(()=>{',
     'const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";',
-    "void css;",
-    "})();",
-  ].join("");
+    'void css;',
+    '})();',
+  ].join('');
 }
 
 function makePatchableDropdownItemChunkJs() {
   return [
-    "(()=>{",
+    '(()=>{',
     'const css=".dropItem{padding:var(--spacing-0);align-items:flex-start;gap:var(--spacing-0-25);border-radius:var(--radius-s);flex-direction:column;align-self:stretch;transition:scale .15s;display:flex}.dropItem:hover{background-color:var(--color-surface-fill-primary-hover)}.dropItem:active{scale:.99}.dropTitle{cursor:pointer;color:var(--color-text-fill-tertiary-enabled)}";',
-    "void css;",
-    "})();",
-  ].join("");
+    'void css;',
+    '})();',
+  ].join('');
 }
 
 function makePatchableSourceUrlPillChunkJs() {
   const css = [
-    ".SiiOu{align-items:center;background-color:var(--color-filterpill-base-fill-default);border:2px solid transparent;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;font-weight:400;max-width:375px;padding:0 6px;text-align:center}",
-    ".SiiOu,body.neutron .SiiOu{font-size:14px;line-height:18px}",
-    "body.neutron .SiiOu{font-size:13px;height:28px;line-height:30px}",
-    "body.neutron .SiiOu{border-radius:var(--radius-sm);margin:0 6px 0 0;max-width:165px;padding:0 5px 0 2px}",
-    ".klJtG{background-color:#f2f2f2;color:#4d4d4d}",
-    "body.neutron .klJtG{padding:var(--spacing-0)}",
-    "body.darkMode .klJtG{background-color:#404040;color:#d9d9d9}",
-    ".yjBnv{line-height:18px;max-width:187.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
-    "body.neutron .yjBnv{max-width:106.5px}",
-  ].join("");
+    '.SiiOu{align-items:center;background-color:var(--color-filterpill-base-fill-default);border:2px solid transparent;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;font-weight:400;max-width:375px;padding:0 6px;text-align:center}',
+    '.SiiOu,body.neutron .SiiOu{font-size:14px;line-height:18px}',
+    'body.neutron .SiiOu{font-size:13px;height:28px;line-height:30px}',
+    'body.neutron .SiiOu{border-radius:var(--radius-sm);margin:0 6px 0 0;max-width:165px;padding:0 5px 0 2px}',
+    '.klJtG{background-color:#f2f2f2;color:#4d4d4d}',
+    'body.neutron .klJtG{padding:var(--spacing-0)}',
+    'body.darkMode .klJtG{background-color:#404040;color:#d9d9d9}',
+    '.yjBnv{line-height:18px;max-width:187.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    'body.neutron .yjBnv{max-width:106.5px}',
+  ].join('');
 
-  return [
-    "(()=>{",
-    `const css=${JSON.stringify(css)};`,
-    "void css;",
-    "})();",
-  ].join("");
+  return ['(()=>{', `const css=${JSON.stringify(css)};`, 'void css;', '})();'].join('');
 }
 
 function makePatchableMainNavChunkJs() {
   return [
-    "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}",
+    'function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}',
     'const multiSelectFloatingMenuCss=".cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:var(--shadow-xl);width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:var(--color-surface-fill-secondarybrand-enabled);flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:var(--color-text-fill-inverted-enabled);font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.a9h8bbz8LYMfS910{background-color:var(--color-surface-stroke-tertiary-enabled);align-items:flex-start;width:1px;height:20px;display:flex}";',
-    "void multiSelectFloatingMenuCss;",
-  ].join("");
+    'void multiSelectFloatingMenuCss;',
+  ].join('');
 }
 
 function makePatchableTabShellJs() {
   return [
-    "(()=>{",
+    '(()=>{',
     'const css=".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}.tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
-    "void css;",
-    "})();",
-  ].join("");
+    'void css;',
+    '})();',
+  ].join('');
 }
 
 function makePatchableNavStylesChunkJs() {
   return [
-    "(()=>{",
+    '(()=>{',
     'const css=":root{--nav-collapsed-width:60px;--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);}',
-    ".collapsedRail{width:60px;transition:width .2s ease-in-out}",
+    '.collapsedRail{width:60px;transition:width .2s ease-in-out}',
     '.collapsedItem{padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;}";',
-    "void css;",
-    "})();",
-  ].join("");
+    'void css;',
+    '})();',
+  ].join('');
 }
 
 function makePatchableNavConstantsChunkJs() {
-  return "function navConstants(){const n=244,r=400,i=244,s=205,l=244,d=60,c=96;return d+c}";
+  return 'function navConstants(){const n=244,r=400,i=244,s=205,l=244,d=60,c=96;return d+c}';
 }
 
 function makePatchableNoteListStylesChunkJs() {
   return [
-    "(()=>{",
+    '(()=>{',
     'const css=":root{--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);}',
     '.NoteSnippet{border-bottom:var(--noteSnippet-border-bottom);}";',
-    "void css;",
-    "})();",
-  ].join("");
+    'void css;',
+    '})();',
+  ].join('');
 }
 
-test("patchEvernoteBundle applies Linux port patches in-place", () => {
+test('patchEvernoteBundle applies Linux port patches in-place', () => {
   const tempDir = makeTempDir();
   try {
-    const asarPath = path.join(tempDir, "app.asar");
+    const asarPath = path.join(tempDir, 'app.asar');
     const mainJs = makePatchableMainJs();
 
     writeMinimalAsar(asarPath, {
-      "main.js": mainJs,
-      "172.js": makePatchableAudioPlayerChunkJs(),
-      "7839.js": makePatchableAppThemeChunkJs(),
-      "4701.js": makePatchableSourceUrlPillChunkJs(),
-      "8078.js": makePatchableTagSuggestionChunkJs(),
-      "1957.js": makePatchableDropdownItemChunkJs(),
-      "8634.js": makePatchableMainNavChunkJs(),
-      "boronTabShell.js": makePatchableTabShellJs(),
-      "2002.js": makePatchableNavStylesChunkJs(),
-      "8453.js": makePatchableNavConstantsChunkJs(),
-      "3014.js": makePatchableNoteListStylesChunkJs(),
-      "3407.js": makePatchableEditorNoteLayoutJs({ swappedNames: true }),
-      "ce/ce-test.js": makePatchableEditorNoteLayoutJs(),
-      "node_modules/@evernote/common-editor/ce.js": makePatchableEditorNoteLayoutJs(),
-      "ce/ce-test.css": makePatchableEditorCss(),
-      "node_modules/@evernote/common-editor/headless.css": makePatchableEditorCss(),
-      "node_modules/en-conduit-electron/dist/MainResourceProxy.js":
+      'main.js': mainJs,
+      '172.js': makePatchableAudioPlayerChunkJs(),
+      '7839.js': makePatchableAppThemeChunkJs(),
+      '4701.js': makePatchableSourceUrlPillChunkJs(),
+      '8078.js': makePatchableTagSuggestionChunkJs(),
+      '1957.js': makePatchableDropdownItemChunkJs(),
+      '8634.js': makePatchableMainNavChunkJs(),
+      'boronTabShell.js': makePatchableTabShellJs(),
+      '2002.js': makePatchableNavStylesChunkJs(),
+      '8453.js': makePatchableNavConstantsChunkJs(),
+      '3014.js': makePatchableNoteListStylesChunkJs(),
+      '3407.js': makePatchableEditorNoteLayoutJs({ swappedNames: true }),
+      'ce/ce-test.js': makePatchableEditorNoteLayoutJs(),
+      'node_modules/@evernote/common-editor/ce.js': makePatchableEditorNoteLayoutJs(),
+      'ce/ce-test.css': makePatchableEditorCss(),
+      'node_modules/@evernote/common-editor/headless.css': makePatchableEditorCss(),
+      'node_modules/en-conduit-electron/dist/MainResourceProxy.js':
         makePatchableMainResourceProxyJs(),
     });
 
@@ -311,10 +306,10 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       assert.equal(firstPatch[patch.resultKey], true, patch.resultKey);
     }
 
-    const patchedMainJs = readMinimalAsarEntry(asarPath, "main.js");
+    const patchedMainJs = readMinimalAsarEntry(asarPath, 'main.js');
     const patchedMainResourceProxyJs = readMinimalAsarEntry(
       asarPath,
-      "node_modules/en-conduit-electron/dist/MainResourceProxy.js",
+      'node_modules/en-conduit-electron/dist/MainResourceProxy.js',
     );
     assert.match(patchedMainJs, /preloadWarmTab\(\)\{return;\s+this\.isPreloadingWarmTab=!0/);
     assert.match(
@@ -325,10 +320,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainJs,
       /Promise\.resolve\(\{\}\)\s+\.then\(\(\)=>\(\{updateAvailable:true\}\)\)/,
     );
-    assert.match(
-      patchedMainJs,
-      /if\(\(0,i\.isNullish\)\(t\)\)return\{\};\s+return t/,
-    );
+    assert.match(patchedMainJs, /if\(\(0,i\.isNullish\)\(t\)\)return\{\};\s+return t/);
     assert.match(patchedMainJs, /const flacMime="audio\/flac\s\s";/);
     assert.match(
       patchedMainJs,
@@ -338,10 +330,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainJs,
       /async getRemoteUpdatedList\(\)\{return\{feedbackLevel:m\.InAppForceUpdateFeedbackLevel\.none\};let t=this\.remoteCheckUrl;/,
     );
-    assert.match(
-      patchedMainJs,
-      /h\.app\.quit\(\),0\}\}\),this\.window\.on\("show"/,
-    );
+    assert.match(patchedMainJs, /h\.app\.quit\(\),0\}\}\),this\.window\.on\("show"/);
     assert.match(
       patchedMainJs,
       /this\.tabs\.has\(t\)&&\(this\.tabs\.delete\(t\),this\.activeTabId===t&&\(this\.onActiveWebContentsChange\?\.\(null,null\),this\.activeTabId=null\)\)/,
@@ -350,26 +339,24 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainJs,
       /backgroundColor:"#000000"\s+,backgroundMaterial:"none",vibrancy:"fullscreen-ui"/,
     );
+    assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
+    assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
     assert.doesNotMatch(
       patchedMainJs,
-      /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/,
+      /this\.hidden=!0,this\.window\.hide\(\)\}\}\),this\.window\.on\("show"/,
     );
-    assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
-    assert.doesNotMatch(patchedMainJs, /this\.hidden=!0,this\.window\.hide\(\)\}\}\),this\.window\.on\("show"/);
     assert.doesNotMatch(patchedMainJs, /this\.activeTabId=null\),this\.publishState\(\)\)/);
     assert.doesNotMatch(patchedMainJs, /audio\/x-flac/);
     assert.doesNotThrow(() => new Function(patchedMainJs));
     assert.ok(
-      patchedMainResourceProxyJs.includes(
-        String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`,
-      ),
+      patchedMainResourceProxyJs.includes(String.raw`.replace(/^audio\/x-flac\b/i, "audio/flac")`),
     );
     assert.match(patchedMainResourceProxyJs, /function normalizeFlacMime/);
     assert.match(
       patchedMainResourceProxyJs,
       /"Content-Type":normalizeFlacMime\(resource\.meta\.mime\)/,
     );
-    const patchedAudioPlayerChunkJs = readMinimalAsarEntry(asarPath, "172.js");
+    const patchedAudioPlayerChunkJs = readMinimalAsarEntry(asarPath, '172.js');
     assert.match(
       patchedAudioPlayerChunkJs,
       /\/\^audio\\\/x-flac\\b\/i\.test\(e\)\?"audio\/flac":r\[e\]\|\|e/,
@@ -382,23 +369,11 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     assert.doesNotMatch(patchedMainResourceProxyJs, /'Content-Type': resource\.meta\.mime/);
     assert.doesNotThrow(() => new Function(patchedMainResourceProxyJs));
     assert.doesNotThrow(() => new Function(patchedAudioPlayerChunkJs));
-    const patchedAppThemeChunkJs = readMinimalAsarEntry(asarPath, "7839.js");
-    assert.match(
-      patchedAppThemeChunkJs,
-      /--color-background-base-fill-primary:#000\s+;/,
-    );
-    assert.match(
-      patchedAppThemeChunkJs,
-      /--color-surface-fill-primary-enabled:#000\s+;/,
-    );
-    assert.match(
-      patchedAppThemeChunkJs,
-      /--color-button-base-fill-primary-default:#000\s+;/,
-    );
-    assert.match(
-      patchedAppThemeChunkJs,
-      /--color-note_list-base-stroke-enabled:#000\s+;/,
-    );
+    const patchedAppThemeChunkJs = readMinimalAsarEntry(asarPath, '7839.js');
+    assert.match(patchedAppThemeChunkJs, /--color-background-base-fill-primary:#000\s+;/);
+    assert.match(patchedAppThemeChunkJs, /--color-surface-fill-primary-enabled:#000\s+;/);
+    assert.match(patchedAppThemeChunkJs, /--color-button-base-fill-primary-default:#000\s+;/);
+    assert.match(patchedAppThemeChunkJs, /--color-note_list-base-stroke-enabled:#000\s+;/);
     assert.match(
       patchedAppThemeChunkJs,
       /--color-text-fill-primary-enabled:var\(--colors-grey-8\);/,
@@ -413,20 +388,14 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/,
     );
     assert.doesNotThrow(() => new Function(patchedAppThemeChunkJs));
-    const patchedEditorCss = readMinimalAsarEntry(asarPath, "ce/ce-test.css");
-    assert.match(
-      patchedEditorCss,
-      /--color-background-fill-primary:#000\s+;/,
-    );
+    const patchedEditorCss = readMinimalAsarEntry(asarPath, 'ce/ce-test.css');
+    assert.match(patchedEditorCss, /--color-background-fill-primary:#000\s+;/);
     assert.match(patchedEditorCss, /body ::selection\{background:rgba\(33,133,231,\.4\)\}/);
     assert.match(
       patchedEditorCss,
       /body\.darkMode ::selection\{background:rgba\(33,133,231,\.4\)\s+\}/,
     );
-    assert.match(
-      patchedEditorCss,
-      /\.linkEditSelection\{background:rgba\(33,133,231,\.4\)\}/,
-    );
+    assert.match(patchedEditorCss, /\.linkEditSelection\{background:rgba\(33,133,231,\.4\)\}/);
     assert.match(
       patchedEditorCss,
       /body\.darkMode \.linkEditSelection\{background:rgba\(33,133,231,\.4\)\s+\}/,
@@ -434,26 +403,32 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     assert.doesNotMatch(patchedEditorCss, /rgba\(33,133,231,\.(?:25|3)\)/);
     assert.match(patchedEditorCss, /en-note\{padding-left:0px\s*;padding-right:0px\s*\}/);
     assert.match(patchedEditorCss, /\.title-editor\{padding-left:0px\s*;padding-right:0px\s*\}/);
-    assert.doesNotMatch(patchedEditorCss, /padding-left:(?:48px|8px\s*);padding-right:(?:48px|8px\s*)/);
-    const patchedEditorNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, "ce/ce-test.js");
+    assert.doesNotMatch(
+      patchedEditorCss,
+      /padding-left:(?:48px|8px\s*);padding-right:(?:48px|8px\s*)/,
+    );
+    const patchedEditorNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, 'ce/ce-test.js');
     assert.match(
       patchedEditorNoteLayoutChunkJs,
       /h=840,f=24,g=124,y=0,v=41,b=0\s,E=0\s,_="left",T=!1\s\s,A=40/,
     );
     assert.doesNotMatch(patchedEditorNoteLayoutChunkJs, /b=56,E=56,_="center"/);
-    const patchedEditorSwappedNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, "3407.js");
+    const patchedEditorSwappedNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, '3407.js');
     assert.match(
       patchedEditorSwappedNoteLayoutChunkJs,
       /h=840,f=24,g=124,y=0,v=41,b=0\s,_=0\s,E="left",T=!1\s\s,A=40/,
     );
     assert.doesNotMatch(patchedEditorSwappedNoteLayoutChunkJs, /b=56,_=56,E="center"/);
-    assert.match(patchedEditorCss, /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/);
+    assert.match(
+      patchedEditorCss,
+      /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/,
+    );
     assert.match(
       patchedEditorCss,
       /--color-surface-fill-tertiary-enabled:var\(--colors-grey-95\);/,
     );
     assert.match(patchedEditorCss, /\.formatted-highlight\{background-color:#ff0\}/);
-    const patchedTagSuggestionChunkJs = readMinimalAsarEntry(asarPath, "8078.js");
+    const patchedTagSuggestionChunkJs = readMinimalAsarEntry(asarPath, '8078.js');
     assert.match(
       patchedTagSuggestionChunkJs,
       /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
@@ -468,7 +443,7 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     );
     assert.doesNotMatch(patchedTagSuggestionChunkJs, /transition-duration:\.1s/);
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
-    const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, "1957.js");
+    const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, '1957.js');
     assert.match(
       patchedDropdownItemChunkJs,
       /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}\.dropItem:hover\{background-color:#1f1f1f\s*\}\.dropItem:active\{scale:\.99\}/,
@@ -478,29 +453,20 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /\.dropItem:hover\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
     );
     assert.doesNotThrow(() => new Function(patchedDropdownItemChunkJs));
-    const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, "4701.js");
+    const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, '4701.js');
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 6px/);
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 5px 0 2px/);
     assert.match(
       patchedSourceUrlPillChunkJs,
       /\.yjBnv\{line-height:18px;max-width:none\s*;overflow:hidden;text-overflow:ellipsis;white-space:nowrap\}/,
     );
-    assert.match(
-      patchedSourceUrlPillChunkJs,
-      /body\.neutron \.yjBnv\{max-width:none\s*\}/,
-    );
+    assert.match(patchedSourceUrlPillChunkJs, /body\.neutron \.yjBnv\{max-width:none\s*\}/);
     assert.doesNotMatch(patchedSourceUrlPillChunkJs, /max-width:375px|max-width:165px/);
     assert.doesNotMatch(patchedSourceUrlPillChunkJs, /max-width:187\.5px|max-width:106\.5px/);
     assert.doesNotThrow(() => new Function(patchedSourceUrlPillChunkJs));
-    const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, "8634.js");
-    assert.match(
-      patchedMainNavChunkJs,
-      /Q=Ia\.WB,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
-    );
-    assert.match(
-      patchedMainNavChunkJs,
-      /box-shadow:0 0 0 1px #444,0 8px 24px #000;width:420px/,
-    );
+    const patchedMainNavChunkJs = readMinimalAsarEntry(asarPath, '8634.js');
+    assert.match(patchedMainNavChunkJs, /Q=Ia\.WB,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/);
+    assert.match(patchedMainNavChunkJs, /box-shadow:0 0 0 1px #444,0 8px 24px #000;width:420px/);
     assert.match(patchedMainNavChunkJs, /background:#1f1f1f/);
     assert.match(
       patchedMainNavChunkJs,
@@ -511,20 +477,14 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /\.smD3K8Nh5kcQyNGr,\.smD3K8Nh5kcQyNGr \*\{color:#fff!important;fill:#fff!important;stroke:#fff!important\}/,
     );
     assert.match(patchedMainNavChunkJs, /\.a9h8bbz8LYMfS910\{background-color:#555;/);
-    assert.doesNotMatch(
-      patchedMainNavChunkJs,
-      /Q=Ia\.V0,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
-    );
+    assert.doesNotMatch(patchedMainNavChunkJs, /Q=Ia\.V0,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/);
     assert.doesNotMatch(
       patchedMainNavChunkJs,
       /background:var\(--color-surface-fill-secondarybrand-enabled\)/,
     );
-    assert.doesNotMatch(
-      patchedMainNavChunkJs,
-      /color:var\(--color-text-fill-inverted-enabled\)/,
-    );
+    assert.doesNotMatch(patchedMainNavChunkJs, /color:var\(--color-text-fill-inverted-enabled\)/);
     assert.doesNotThrow(() => new Function(patchedMainNavChunkJs));
-    const patchedTabShellJs = readMinimalAsarEntry(asarPath, "boronTabShell.js");
+    const patchedTabShellJs = readMinimalAsarEntry(asarPath, 'boronTabShell.js');
     assert.match(
       patchedTabShellJs,
       /\.gger9Drdmhogq7zI\{background:var\(--color-surface-fill-primary-enabled\);color:#fff;font-weight:700;border-radius:24px\}/,
@@ -542,19 +502,10 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{[^}]*height:38px;/,
     );
     assert.doesNotThrow(() => new Function(patchedTabShellJs));
-    const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");
-    assert.match(
-      patchedNavStylesChunkJs,
-      /--nav-collapsed-width:30px;/,
-    );
-    assert.match(
-      patchedNavStylesChunkJs,
-      /width:30px;transition:width \.2s ease-in-out/,
-    );
-    assert.match(
-      patchedNavStylesChunkJs,
-      /--nav-collapsed-padding:var\(--spacing-1-5\)0;\s+/,
-    );
+    const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, '2002.js');
+    assert.match(patchedNavStylesChunkJs, /--nav-collapsed-width:30px;/);
+    assert.match(patchedNavStylesChunkJs, /width:30px;transition:width \.2s ease-in-out/);
+    assert.match(patchedNavStylesChunkJs, /--nav-collapsed-padding:var\(--spacing-1-5\)0;\s+/);
     assert.match(
       patchedNavStylesChunkJs,
       /padding:var\(--spacing-1-5\)0;justify-content:center;\s+/,
@@ -563,11 +514,11 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     assert.doesNotMatch(patchedNavStylesChunkJs, /width:60px;transition:width \.2s ease-in-out/);
     assert.doesNotMatch(patchedNavStylesChunkJs, /spacing-0-5/);
     assert.doesNotThrow(() => new Function(patchedNavStylesChunkJs));
-    const patchedNavConstantsChunkJs = readMinimalAsarEntry(asarPath, "8453.js");
+    const patchedNavConstantsChunkJs = readMinimalAsarEntry(asarPath, '8453.js');
     assert.match(patchedNavConstantsChunkJs, /d=30,c=96/);
     assert.doesNotMatch(patchedNavConstantsChunkJs, /d=60,c=96/);
     assert.doesNotThrow(() => new Function(patchedNavConstantsChunkJs));
-    const patchedNoteListStylesChunkJs = readMinimalAsarEntry(asarPath, "3014.js");
+    const patchedNoteListStylesChunkJs = readMinimalAsarEntry(asarPath, '3014.js');
     assert.match(
       patchedNoteListStylesChunkJs,
       /--noteSnippet-border-bottom:0px solid transparent;\s+/,
@@ -582,24 +533,21 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
     for (const patch of patches) {
       assert.equal(secondPatch[patch.resultKey], false, patch.resultKey);
     }
-    assert.equal(readMinimalAsarEntry(asarPath, "main.js"), patchedMainJs);
+    assert.equal(readMinimalAsarEntry(asarPath, 'main.js'), patchedMainJs);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
-test("patchEvernoteBundle fails when expected bundle code is absent", () => {
+test('patchEvernoteBundle fails when expected bundle code is absent', () => {
   const tempDir = makeTempDir();
   try {
-    const asarPath = path.join(tempDir, "app.asar");
+    const asarPath = path.join(tempDir, 'app.asar');
     writeMinimalAsar(asarPath, {
-      "main.js": "class MainWindowTabManager { preloadWarmTab(){return this.warmTab;} }",
+      'main.js': 'class MainWindowTabManager { preloadWarmTab(){return this.warmTab;} }',
     });
 
-    assert.throws(
-      () => patchEvernoteBundle(asarPath),
-      /Patch target not found in main\.js/,
-    );
+    assert.throws(() => patchEvernoteBundle(asarPath), /Patch target not found in main\.js/);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
