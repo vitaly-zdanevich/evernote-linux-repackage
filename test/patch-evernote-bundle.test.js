@@ -238,7 +238,11 @@ function makePatchableSourceUrlPillChunkJs() {
 }
 
 function makePatchableMainNavChunkJs() {
-  return "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}";
+  return [
+    "function navWidth(){const Ia={V0:96,WB:60,af:400};let q=300,Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q);return Q+X}",
+    'const multiSelectFloatingMenuCss=".cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:var(--shadow-xl);width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:var(--color-surface-fill-secondarybrand-enabled);flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:var(--color-text-fill-inverted-enabled);font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.a9h8bbz8LYMfS910{background-color:var(--color-surface-stroke-tertiary-enabled);align-items:flex-start;width:1px;height:20px;display:flex}";',
+    "void multiSelectFloatingMenuCss;",
+  ].join("");
 }
 
 function makePatchableNavStylesChunkJs() {
@@ -483,9 +487,31 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       patchedMainNavChunkJs,
       /Q=Ia\.WB,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
     );
+    assert.match(
+      patchedMainNavChunkJs,
+      /box-shadow:0 0 0 1px #444,0 8px 24px #000;width:420px/,
+    );
+    assert.match(patchedMainNavChunkJs, /background:#1f1f1f/);
+    assert.match(
+      patchedMainNavChunkJs,
+      /\.UBpdhKOC1XkODEHP\{min-width:0;color:#fff;font:var\(--typography-m14\);/,
+    );
+    assert.match(
+      patchedMainNavChunkJs,
+      /\.smD3K8Nh5kcQyNGr,\.smD3K8Nh5kcQyNGr \*\{color:#fff!important;fill:#fff!important;stroke:#fff!important\}/,
+    );
+    assert.match(patchedMainNavChunkJs, /\.a9h8bbz8LYMfS910\{background-color:#555;/);
     assert.doesNotMatch(
       patchedMainNavChunkJs,
       /Q=Ia\.V0,X=Math\.max\(Math\.min\(Ia\.af,q\),Q\)/,
+    );
+    assert.doesNotMatch(
+      patchedMainNavChunkJs,
+      /background:var\(--color-surface-fill-secondarybrand-enabled\)/,
+    );
+    assert.doesNotMatch(
+      patchedMainNavChunkJs,
+      /color:var\(--color-text-fill-inverted-enabled\)/,
     );
     assert.doesNotThrow(() => new Function(patchedMainNavChunkJs));
     const patchedNavStylesChunkJs = readMinimalAsarEntry(asarPath, "2002.js");

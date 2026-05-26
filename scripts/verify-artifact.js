@@ -657,6 +657,23 @@ function verifySourceUrlPillWidthPatch(asarPath) {
   process.stdout.write("Verified source URL pill can use the available note header width.\n");
 }
 
+function verifyMultiSelectFloatingMenuPatch(asarPath) {
+  const runtime = readAsarText(asarPath, "8634.js");
+  const stalePattern =
+    /\.cSX4Fc7FHQb632Sg\{[^}]*background:var\(--color-surface-fill-secondarybrand-enabled\)[^}]*\}\.UBpdhKOC1XkODEHP\{[^}]*color:var\(--color-text-fill-inverted-enabled\)/;
+  const patchedPattern =
+    /\.cSX4Fc7FHQb632Sg\{[^}]*box-shadow:0 0 0 1px #444,0 8px 24px #000;[^}]*background:#1f1f1f;[^}]*\}\.UBpdhKOC1XkODEHP\{[^}]*color:#fff;[^}]*\}\.smD3K8Nh5kcQyNGr\{[^}]*\}\._BcxFGjeF0UUj5Z_\{[^}]*\}\.smD3K8Nh5kcQyNGr,\.smD3K8Nh5kcQyNGr \*\{color:#fff!important;fill:#fff!important;stroke:#fff!important\}\.a9h8bbz8LYMfS910\{background-color:#555;/;
+
+  if (stalePattern.test(runtime)) {
+    throw new Error("Unpatched multi-select floating menu contrast remains.");
+  }
+  if (!patchedPattern.test(runtime)) {
+    throw new Error("Missing visible multi-select floating menu marker.");
+  }
+
+  process.stdout.write("Verified multi-select floating menu is visible on black theme.\n");
+}
+
 function verifyCollapsedNavWidthPatch(asarPath) {
   const navRuntime = readAsarText(asarPath, "8634.js");
   if (navRuntime.includes("Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)")) {
@@ -759,6 +776,7 @@ function verifyArtifact(options) {
   verifyTagSuggestionHoverPatch(asarPath);
   verifyDropdownItemHoverPatch(asarPath);
   verifySourceUrlPillWidthPatch(asarPath);
+  verifyMultiSelectFloatingMenuPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
   verifyCollapsedNavSpacingPatch(asarPath);
   verifyCollapsedNavThinWidthPatch(asarPath);
