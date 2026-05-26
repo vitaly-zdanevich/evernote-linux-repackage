@@ -1,5 +1,3 @@
-'use strict';
-
 const assert = require('node:assert/strict');
 const childProcess = require('node:child_process');
 const fs = require('node:fs');
