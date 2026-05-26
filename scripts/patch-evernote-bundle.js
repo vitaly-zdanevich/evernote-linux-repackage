@@ -288,6 +288,18 @@ const EDITOR_SELECTION_BACKGROUND_PATTERN =
   /rgba\(33,133,231,\.(?:25|3)\)/g;
 const EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN =
   /rgba\(33,133,231,\.4\)\s*/g;
+const EDITOR_HORIZONTAL_PADDING_FILE_PATTERN =
+  /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+const EDITOR_HORIZONTAL_PADDING_PATTERN =
+  /padding-left:(?:48px|8px\s);padding-right:(?:48px|8px\s)/g;
+const EDITOR_HORIZONTAL_PADDING_ALREADY_PATCHED_PATTERN =
+  /padding-left:0px\s*;padding-right:0px\s*/g;
+const EDITOR_NOTE_LAYOUT_FILE_PATTERN =
+  /^(?:3407\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
+const EDITOR_NOTE_LAYOUT_MARGIN_PATTERN =
+  /h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40/g;
+const EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN =
+  /h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40/g;
 const TAG_SUGGESTION_HOVER_PATTERN =
   /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/g;
 const TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN =
@@ -483,6 +495,30 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     pattern: EDITOR_SELECTION_BACKGROUND_PATTERN,
     replacementForMatch: (match) => sameLengthReplacement(match, "rgba(33,133,231,.4)"),
     alreadyPatchedPattern: EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "compactEditorHorizontalPadding",
+    description: "reduced note editor horizontal padding",
+    filePattern: EDITOR_HORIZONTAL_PADDING_FILE_PATTERN,
+    pattern: EDITOR_HORIZONTAL_PADDING_PATTERN,
+    replacementForMatch: (match) =>
+      match
+        .replace(/padding-left:(?:48px|8px\s)/, "padding-left:0px ")
+        .replace(/padding-right:(?:48px|8px\s)/, "padding-right:0px "),
+    alreadyPatchedPattern: EDITOR_HORIZONTAL_PADDING_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+  },
+  {
+    resultKey: "leftAlignedEditorNoteLayout",
+    description: "left-aligned note editor layout with no side margin",
+    filePattern: EDITOR_NOTE_LAYOUT_FILE_PATTERN,
+    pattern: EDITOR_NOTE_LAYOUT_MARGIN_PATTERN,
+    replacementForMatch: (match) =>
+      match.includes('E=56,_="center"')
+        ? 'h=840,f=24,g=124,y=0,v=41,b=0 ,E=0 ,_="left",T=!1  ,A=40'
+        : 'h=840,f=24,g=124,y=0,v=41,b=0 ,_=0 ,E="left",T=!1  ,A=40',
+    alreadyPatchedPattern: EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
   {

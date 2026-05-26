@@ -456,6 +456,84 @@ function verifyEditorTextSelectionPatch(asarPath) {
   process.stdout.write("Verified editor text selection overlays are brighter.\n");
 }
 
+function verifyEditorHorizontalPaddingPatch(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const editorPaddingFilePattern =
+    /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
+  const stalePaddingPattern = /padding-left:(?:48px|8px\s*);padding-right:(?:48px|8px\s*)/;
+  const patchedPaddingPattern = /padding-left:0px\s*;padding-right:0px\s*/;
+  const staleFiles = [];
+  let checkedFiles = 0;
+  let patchedFiles = 0;
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !editorPaddingFilePattern.test(filePath)) {
+      return;
+    }
+
+    checkedFiles += 1;
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (stalePaddingPattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedPaddingPattern.test(text)) {
+      patchedFiles += 1;
+    }
+  });
+
+  if (checkedFiles === 0) {
+    throw new Error("No editor padding CSS files found.");
+  }
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched editor horizontal padding remains in ${staleFiles.join(", ")}.`);
+  }
+  if (patchedFiles < 4) {
+    throw new Error(`Missing compact editor horizontal padding marker; found ${patchedFiles}.`);
+  }
+
+  process.stdout.write("Verified note editor horizontal padding is compact.\n");
+}
+
+function verifyEditorNoteLayoutPatch(asarPath) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const editorLayoutFilePattern =
+    /^(?:3407\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
+  const staleLayoutPattern =
+    /h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40/;
+  const patchedLayoutPattern =
+    /h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40/;
+  const staleFiles = [];
+  let checkedFiles = 0;
+  let patchedFiles = 0;
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !editorLayoutFilePattern.test(filePath)) {
+      return;
+    }
+
+    checkedFiles += 1;
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (staleLayoutPattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedLayoutPattern.test(text)) {
+      patchedFiles += 1;
+    }
+  });
+
+  if (checkedFiles === 0) {
+    throw new Error("No editor note layout JS files found.");
+  }
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched editor note layout margin remains in ${staleFiles.join(", ")}.`);
+  }
+  if (patchedFiles < 4) {
+    throw new Error(`Missing left-aligned editor note layout marker; found ${patchedFiles}.`);
+  }
+
+  process.stdout.write("Verified note editor layout is left-aligned with no side margin.\n");
+}
+
 function verifyTagSuggestionHoverPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const stalePattern =
@@ -676,6 +754,8 @@ function verifyArtifact(options) {
   verifyBlackBackgroundThemePatch(asarPath);
   verifyStartupBackgroundPatch(portDir, asarPath);
   verifyEditorTextSelectionPatch(asarPath);
+  verifyEditorHorizontalPaddingPatch(asarPath);
+  verifyEditorNoteLayoutPatch(asarPath);
   verifyTagSuggestionHoverPatch(asarPath);
   verifyDropdownItemHoverPatch(asarPath);
   verifySourceUrlPillWidthPatch(asarPath);

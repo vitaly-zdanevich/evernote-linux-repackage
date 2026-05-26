@@ -183,10 +183,19 @@ function makePatchableEditorCss() {
     "body.darkMode ::selection{background:rgba(33,133,231,.25)}",
     ".linkEditSelection{background:rgba(33,133,231,.3)}",
     "body.darkMode .linkEditSelection{background:rgba(33,133,231,.25)}",
+    "en-note{padding-left:48px;padding-right:48px}",
+    ".title-editor{padding-left:48px;padding-right:48px}",
     "en-note.peso{background-color:var(--color-background-fill-primary)}",
     "body.darkMode en-note.peso{background-color:#262626;color:#e6e6e6}",
     ".formatted-highlight{background-color:#ff0}",
   ].join("");
+}
+
+function makePatchableEditorNoteLayoutJs({ swappedNames = false } = {}) {
+  const layoutConstants = swappedNames
+    ? 'h=840,f=24,g=124,y=0,v=41,b=56,_=56,E="center",T=!1,A=40'
+    : 'h=840,f=24,g=124,y=0,v=41,b=56,E=56,_="center",T=!1,A=40';
+  return `function noteLayout(){const ${layoutConstants};return b;}`;
 }
 
 function makePatchableTagSuggestionChunkJs() {
@@ -274,6 +283,9 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       "2002.js": makePatchableNavStylesChunkJs(),
       "8453.js": makePatchableNavConstantsChunkJs(),
       "3014.js": makePatchableNoteListStylesChunkJs(),
+      "3407.js": makePatchableEditorNoteLayoutJs({ swappedNames: true }),
+      "ce/ce-test.js": makePatchableEditorNoteLayoutJs(),
+      "node_modules/@evernote/common-editor/ce.js": makePatchableEditorNoteLayoutJs(),
       "ce/ce-test.css": makePatchableEditorCss(),
       "node_modules/@evernote/common-editor/headless.css": makePatchableEditorCss(),
       "node_modules/en-conduit-electron/dist/MainResourceProxy.js":
@@ -406,6 +418,21 @@ test("patchEvernoteBundle applies Linux port patches in-place", () => {
       /body\.darkMode \.linkEditSelection\{background:rgba\(33,133,231,\.4\)\s+\}/,
     );
     assert.doesNotMatch(patchedEditorCss, /rgba\(33,133,231,\.(?:25|3)\)/);
+    assert.match(patchedEditorCss, /en-note\{padding-left:0px\s*;padding-right:0px\s*\}/);
+    assert.match(patchedEditorCss, /\.title-editor\{padding-left:0px\s*;padding-right:0px\s*\}/);
+    assert.doesNotMatch(patchedEditorCss, /padding-left:(?:48px|8px\s*);padding-right:(?:48px|8px\s*)/);
+    const patchedEditorNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, "ce/ce-test.js");
+    assert.match(
+      patchedEditorNoteLayoutChunkJs,
+      /h=840,f=24,g=124,y=0,v=41,b=0\s,E=0\s,_="left",T=!1\s\s,A=40/,
+    );
+    assert.doesNotMatch(patchedEditorNoteLayoutChunkJs, /b=56,E=56,_="center"/);
+    const patchedEditorSwappedNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, "3407.js");
+    assert.match(
+      patchedEditorSwappedNoteLayoutChunkJs,
+      /h=840,f=24,g=124,y=0,v=41,b=0\s,_=0\s,E="left",T=!1\s\s,A=40/,
+    );
+    assert.doesNotMatch(patchedEditorSwappedNoteLayoutChunkJs, /b=56,_=56,E="center"/);
     assert.match(patchedEditorCss, /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/);
     assert.match(
       patchedEditorCss,
