@@ -316,6 +316,10 @@ const MULTI_SELECT_FLOATING_MENU_STYLES =
   '.cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:var(--shadow-xl);width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:var(--color-surface-fill-secondarybrand-enabled);flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:var(--color-text-fill-inverted-enabled);font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.a9h8bbz8LYMfS910{background-color:var(--color-surface-stroke-tertiary-enabled);align-items:flex-start;width:1px;height:20px;display:flex}';
 const MULTI_SELECT_FLOATING_MENU_REPLACEMENT =
   '.cSX4Fc7FHQb632Sg{z-index:var(--floating-menu-z-index);box-shadow:0 0 0 1px #444,0 8px 24px #000;width:420px;padding:var(--spacing-0-75)var(--spacing-1-5);align-items:center;gap:var(--spacing-0-5);pointer-events:all;border-radius:var(--radius-sm-md);background:#1f1f1f;flex-shrink:0;justify-content:space-between;animation:.3s cG8p5qfvk3wGbIUX;display:flex;position:absolute;bottom:32px;left:50%;translate:-50%}.UBpdhKOC1XkODEHP{min-width:0;color:#fff;font:var(--typography-m14);padding-left:var(--spacing-0-75)}.smD3K8Nh5kcQyNGr{align-items:center;gap:var(--spacing-0-75);display:flex}._BcxFGjeF0UUj5Z_{padding:var(--spacing-0);justify-content:flex-end;align-items:center;gap:var(--spacing-0-5);display:flex}.smD3K8Nh5kcQyNGr,.smD3K8Nh5kcQyNGr *{color:#fff!important;fill:#fff!important;stroke:#fff!important}.a9h8bbz8LYMfS910{background-color:#555;align-items:flex-start;width:1px;height:20px;display:flex}';
+const NOTE_DETAIL_FRAME_SHADOW_STYLES =
+  'box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
+const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
+  'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -579,6 +583,13 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8634.js',
     search: MULTI_SELECT_FLOATING_MENU_STYLES,
     replacementPrefix: MULTI_SELECT_FLOATING_MENU_REPLACEMENT,
+  },
+  {
+    resultKey: 'hiddenNoteDetailFrameLine',
+    description: 'hid note detail frame line between notes list and editor',
+    filePath: '8078.js',
+    search: NOTE_DETAIL_FRAME_SHADOW_STYLES,
+    replacementPrefix: NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',

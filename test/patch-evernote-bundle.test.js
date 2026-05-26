@@ -200,7 +200,9 @@ function makePatchableTagSuggestionChunkJs() {
   return [
     '(()=>{',
     'const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";',
+    'const noteDetailCss=".eFghltw7oGwowX2A{background-color:var(--pesoNoteDetail-bg);min-width:450px;border-radius:var(--radius-sm);margin:var(--viewpane-padding)var(--viewpane-padding)var(--viewpane-padding)var(--spacing-0-5);box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden}";',
     'void css;',
+    'void noteDetailCss;',
     '})();',
   ].join('');
 }
@@ -437,11 +439,19 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedTagSuggestionChunkJs,
       /transition-duration:0s\s*;transition-timing-function:ease-in-out/,
     );
+    assert.match(
+      patchedTagSuggestionChunkJs,
+      /box-shadow:0 0 0 1px #000\s*;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden/,
+    );
     assert.doesNotMatch(
       patchedTagSuggestionChunkJs,
       /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
     );
     assert.doesNotMatch(patchedTagSuggestionChunkJs, /transition-duration:\.1s/);
+    assert.doesNotMatch(
+      patchedTagSuggestionChunkJs,
+      /box-shadow:var\(--shadow-app-components-background-base\);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden/,
+    );
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
     assert.match(
       patchedSecondTagSuggestionChunkJs,

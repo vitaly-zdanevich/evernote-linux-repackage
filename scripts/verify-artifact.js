@@ -696,6 +696,23 @@ function verifyMultiSelectFloatingMenuPatch(asarPath) {
   process.stdout.write('Verified multi-select floating menu is visible on black theme.\n');
 }
 
+function verifyNoteDetailFrameLinePatch(asarPath) {
+  const runtime = readAsarText(asarPath, '8078.js');
+  const staleMarker =
+    'box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
+  const patchedMarker =
+    'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
+
+  if (runtime.includes(staleMarker)) {
+    throw new Error('Unpatched note detail frame line between notes list and editor remains.');
+  }
+  if (!runtime.includes(patchedMarker)) {
+    throw new Error('Missing hidden note detail frame line marker.');
+  }
+
+  process.stdout.write('Verified note detail frame line between notes list and editor is black.\n');
+}
+
 function verifyActiveTabTitlePatch(asarPath) {
   const runtime = readAsarText(asarPath, 'boronTabShell.js');
   const staleMarker =
@@ -835,6 +852,7 @@ function verifyArtifact(options) {
   verifyDropdownItemHoverPatch(asarPath);
   verifySourceUrlPillWidthPatch(asarPath);
   verifyMultiSelectFloatingMenuPatch(asarPath);
+  verifyNoteDetailFrameLinePatch(asarPath);
   verifyActiveTabTitlePatch(asarPath);
   verifyTabButtonHitTargetPatch(asarPath);
   verifyCollapsedNavWidthPatch(asarPath);
