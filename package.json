@@ -5,7 +5,7 @@
   "description": "Repackage the official Evernote Electron desktop client for Linux without Wine.",
   "scripts": {
     "build": "node scripts/build-linux-port.js",
-    "check": "node --check scripts/build-linux-port.js && node --check scripts/check-media-support.js && node --check scripts/doctor.js && node --check scripts/patch-evernote-bundle.js && node --check scripts/package-appimage.js && node --check scripts/smoke-test.js && node --check scripts/start-built.js && node --check scripts/verify-artifact.js && node --check scripts/write-checksums.js && bash -n scripts/smoke-test-clean-container.sh",
+    "check": "node --check scripts/build-linux-port.js && node --check scripts/check-media-support.js && node --check scripts/doctor.js && node --check scripts/patch-evernote-bundle.js && node --check scripts/package-appimage.js && node --check scripts/smoke-test.js && node --check scripts/start-built.js && node --check scripts/verify-artifact.js && node --check scripts/write-checksums.js && bash -n scripts/smoke-test-clean-container.sh && sh -n scripts/templates/evernote-launcher.sh && sh -n scripts/templates/appimage-AppRun.sh",
     "checksums": "node scripts/write-checksums.js",
     "check:media": "node scripts/check-media-support.js",
     "doctor": "node scripts/doctor.js",

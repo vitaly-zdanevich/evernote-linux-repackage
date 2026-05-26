@@ -24,7 +24,9 @@ test("rejects unsupported AppImage target architectures", () => {
 test("AppRun points Electron at bundled AppImage runtime libraries", () => {
   const script = appRunScript();
 
-  assert.match(script, new RegExp(`LD_LIBRARY_PATH="\\$APPDIR/${APPIMAGE_RUNTIME_LIB_DIR}`));
+  assert.match(script, new RegExp(`BUNDLED_LIB_DIR="\\$APPDIR/${APPIMAGE_RUNTIME_LIB_DIR}"`));
+  assert.match(script, /LD_LIBRARY_PATH="\$BUNDLED_LIB_DIR:\$LD_LIBRARY_PATH"/);
+  assert.match(script, /LD_LIBRARY_PATH="\$BUNDLED_LIB_DIR"/);
   assert.match(script, /exec "\$APPDIR\/usr\/lib\/evernote\/evernote" "\$@"/);
 });
 

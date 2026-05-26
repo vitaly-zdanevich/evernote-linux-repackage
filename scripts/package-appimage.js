@@ -8,6 +8,7 @@ const path = require("path");
 const ROOT = path.resolve(__dirname, "..");
 const DIST_DIR = path.join(ROOT, "dist");
 const DEFAULT_APP_DIR = path.join(DIST_DIR, "AppDir");
+const TEMPLATE_DIR = path.join(__dirname, "templates");
 const APPIMAGE_RUNTIME_LIB_DIR = path.join("usr", "lib", "evernote", "appimage-libs");
 const BUNDLED_RUNTIME_LIBRARIES = [
   {
@@ -218,6 +219,10 @@ function writeFileExecutable(filePath, content) {
   fs.chmodSync(filePath, 0o755);
 }
 
+function readTemplate(fileName) {
+  return fs.readFileSync(path.join(TEMPLATE_DIR, fileName), "utf8");
+}
+
 function convertIcon(portDir, appDir) {
   const sourceIcon = path.join(portDir, "resources", "static", "win", "icons", "icon.ico");
   if (!fs.existsSync(sourceIcon)) {
@@ -268,20 +273,7 @@ function bundleRuntimeLibraries(appDir) {
 }
 
 function appRunScript() {
-  const libraryPath = `$APPDIR/${APPIMAGE_RUNTIME_LIB_DIR}`;
-  return [
-    "#!/usr/bin/env sh",
-    "set -eu",
-    'HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)',
-    'APPDIR=${APPDIR:-$HERE}',
-    `if [ -n "\${LD_LIBRARY_PATH:-}" ]; then`,
-    `  export LD_LIBRARY_PATH="${libraryPath}:$LD_LIBRARY_PATH"`,
-    "else",
-    `  export LD_LIBRARY_PATH="${libraryPath}"`,
-    "fi",
-    'exec "$APPDIR/usr/lib/evernote/evernote" "$@"',
-    "",
-  ].join("\n");
+  return readTemplate("appimage-AppRun.sh");
 }
 
 function resolvePortableSourceDir(portDir) {
