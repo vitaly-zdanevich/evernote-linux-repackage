@@ -351,8 +351,11 @@ function packageAppImage({ portDir, appDir, output, appDirOnly }) {
     process.env.APPIMAGE_ARCH || appImageArchForTargetArch(targetArch),
   );
   const version = getEvernoteVersion(resolvedPortDir);
-  const outputPath = output || path.join(DIST_DIR, `Evernote-${version}-${appImageArch}.AppImage`);
+  const themeSuffix = buildInfo && buildInfo.blackTheme ? '-black' : '';
+  const outputPath =
+    output || path.join(DIST_DIR, `Evernote-${version}${themeSuffix}-${appImageArch}.AppImage`);
   const preparedAppDir = prepareAppDir({ portDir: resolvedPortDir, appDir });
+
 
   if (appDirOnly) {
     log(`Prepared ${preparedAppDir}`);

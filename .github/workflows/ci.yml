@@ -23,7 +23,7 @@ jobs:
       - run: npm test
 
   build-pinned:
-    name: build pinned (${{ matrix.appimage_arch }})
+    name: build pinned (${{ matrix.appimage_arch }}, black=${{ matrix.black_theme }})
     runs-on: ${{ matrix.runner }}
     needs: test
     if: github.event_name != 'pull_request'
@@ -33,6 +33,16 @@ jobs:
         include:
           - target_arch: x64
             appimage_arch: x86_64
+            black_theme: "1"
+            runner: ubuntu-22.04
+            electron_sha256: 02e644d75392a1ea8991106bc77e1db243ee1fc0c23107dc3b253ed545dd4c66
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+            appimagetool_sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+            appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+          - target_arch: x64
+            appimage_arch: x86_64
+            black_theme: "0"
             runner: ubuntu-22.04
             electron_sha256: 02e644d75392a1ea8991106bc77e1db243ee1fc0c23107dc3b253ed545dd4c66
             appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
@@ -41,6 +51,16 @@ jobs:
             appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
           - target_arch: arm64
             appimage_arch: aarch64
+            black_theme: "1"
+            runner: ubuntu-22.04-arm
+            electron_sha256: 7c76a5147a9870b8bcbd859278148e1e326f98ea6a5dcb3ac2707d39bd22b2d5
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
+            appimagetool_sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-aarch64
+            appimage_runtime_sha256: 00cbdfcf917cc6c0ff6d3347d59e0ca1f7f45a6df1a428a0d6d8a78664d87444
+          - target_arch: arm64
+            appimage_arch: aarch64
+            black_theme: "0"
             runner: ubuntu-22.04-arm
             electron_sha256: 7c76a5147a9870b8bcbd859278148e1e326f98ea6a5dcb3ac2707d39bd22b2d5
             appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
@@ -51,6 +71,7 @@ jobs:
       BUILD_FLAVOR: "pinned"
       TARGET_ARCH: ${{ matrix.target_arch }}
       APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
+      EVERNOTE_BLACK_THEME: ${{ matrix.black_theme }}
       EVERNOTE_URL: "https://win.desktop.evernote.com/builds/Evernote-latest.exe"
       EVERNOTE_CACHE_NAME: "Evernote-11.17.3.20260518103423.exe"
       EVERNOTE_EXPECTED_VERSION: "11.17.3"
@@ -89,7 +110,6 @@ jobs:
           PORT_DIR="$(node -p 'require("./dist/build-info.json").portDir')"
           test -x "$PORT_DIR/evernote"
           test -f "$PORT_DIR/resources/app.asar"
-          node scripts/patch-evernote-bundle.js "$PORT_DIR/resources/app.asar"
           EVERNOTE_PORT_DIR="$PORT_DIR" npm run verify
           EVERNOTE_PORT_DIR="$PORT_DIR" npm run smoke
           EVERNOTE_PORT_DIR="$PORT_DIR" APPIMAGETOOL="$GITHUB_WORKSPACE/.cache/appimagetool/squashfs-root/AppRun" APPIMAGE_RUNTIME_FILE="$GITHUB_WORKSPACE/.cache/appimagetool/runtime-${APPIMAGE_ARCH}" npm run package:appimage
@@ -103,18 +123,18 @@ jobs:
           cd dist
           sha256sum -c SHA256SUMS
           cd ..
-          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}"
-          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
-          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
-          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
+          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}"
+          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/build-info.json"
+          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/SHA256SUMS"
+          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: evernote-linux-repackage-pinned-${{ matrix.appimage_arch }}-${{ github.sha }}
+          name: evernote-linux-repackage-pinned-${{ matrix.appimage_arch }}-${{ matrix.black_theme }}-${{ github.sha }}
           if-no-files-found: error
           path: ci-artifacts/
 
   build-latest:
-    name: build latest canary (${{ matrix.appimage_arch }})
+    name: build latest canary (${{ matrix.appimage_arch }}, black=${{ matrix.black_theme }})
     runs-on: ${{ matrix.runner }}
     needs: test
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
@@ -125,6 +145,15 @@ jobs:
         include:
           - target_arch: x64
             appimage_arch: x86_64
+            black_theme: "1"
+            runner: ubuntu-22.04
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
+            appimagetool_sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-x86_64
+            appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
+          - target_arch: x64
+            appimage_arch: x86_64
+            black_theme: "0"
             runner: ubuntu-22.04
             appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage
             appimagetool_sha256: ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0
@@ -132,6 +161,15 @@ jobs:
             appimage_runtime_sha256: 2fca8b443c92510f1483a883f60061ad09b46b978b2631c807cd873a47ec260d
           - target_arch: arm64
             appimage_arch: aarch64
+            black_theme: "1"
+            runner: ubuntu-22.04-arm
+            appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
+            appimagetool_sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
+            appimage_runtime_url: https://github.com/AppImage/type2-runtime/releases/download/20251108/runtime-aarch64
+            appimage_runtime_sha256: 00cbdfcf917cc6c0ff6d3347d59e0ca1f7f45a6df1a428a0d6d8a78664d87444
+          - target_arch: arm64
+            appimage_arch: aarch64
+            black_theme: "0"
             runner: ubuntu-22.04-arm
             appimagetool_url: https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-aarch64.AppImage
             appimagetool_sha256: f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158
@@ -141,6 +179,7 @@ jobs:
       BUILD_FLAVOR: "latest"
       TARGET_ARCH: ${{ matrix.target_arch }}
       APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
+      EVERNOTE_BLACK_THEME: ${{ matrix.black_theme }}
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -171,7 +210,6 @@ jobs:
         run: |
           npm run build
           PORT_DIR="$(node -p 'require("./dist/build-info.json").portDir')"
-          node scripts/patch-evernote-bundle.js "$PORT_DIR/resources/app.asar"
           EVERNOTE_PORT_DIR="$PORT_DIR" npm run verify
           EVERNOTE_PORT_DIR="$PORT_DIR" npm run smoke
           EVERNOTE_PORT_DIR="$PORT_DIR" APPIMAGETOOL="$GITHUB_WORKSPACE/.cache/appimagetool/squashfs-root/AppRun" APPIMAGE_RUNTIME_FILE="$GITHUB_WORKSPACE/.cache/appimagetool/runtime-${APPIMAGE_ARCH}" npm run package:appimage
@@ -183,13 +221,13 @@ jobs:
           cd dist
           sha256sum -c SHA256SUMS
           cd ..
-          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}"
-          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}/build-info.json"
-          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}/SHA256SUMS"
-          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}/"
+          mkdir -p "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}"
+          cp dist/build-info.json "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/build-info.json"
+          cp dist/SHA256SUMS "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/SHA256SUMS"
+          cp "$APPIMAGE" "ci-artifacts/${APPIMAGE_ARCH}-${EVERNOTE_BLACK_THEME}/"
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: evernote-linux-repackage-latest-${{ matrix.appimage_arch }}-${{ github.sha }}
+          name: evernote-linux-repackage-latest-${{ matrix.appimage_arch }}-${{ matrix.black_theme }}-${{ github.sha }}
           if-no-files-found: error
           path: ci-artifacts/
 
@@ -211,19 +249,34 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         run: |
           mkdir -p release-assets
-          for APPIMAGE_ARCH in x86_64 aarch64; do
-            ARCH_DIR="$APPIMAGE_ARCH"
-            test -d "$ARCH_DIR"
-            SOURCE_APPIMAGE="$(find "$ARCH_DIR" -maxdepth 1 -name '*.AppImage' -type f -print -quit)"
+          for ARCH_THEME_DIR in *-1 *-0; do
+            test -d "$ARCH_THEME_DIR"
+            SOURCE_APPIMAGE="$(find "$ARCH_THEME_DIR" -maxdepth 1 -name '*.AppImage' -type f -print -quit)"
             test -n "$SOURCE_APPIMAGE"
-            test -f "$ARCH_DIR/build-info.json"
-            APPIMAGE_NAME="Evernote-${TAG_NAME}-${APPIMAGE_ARCH}.AppImage"
-            BUILD_INFO_NAME="build-info-${APPIMAGE_ARCH}.json"
+            test -f "$ARCH_THEME_DIR/build-info.json"
+            
+            APPIMAGE_BASENAME="$(basename "$SOURCE_APPIMAGE")"
+            # Replace version from filename with TAG_NAME for standard release naming
+            # Evernote-11.17.3-black-x86_64.AppImage -> Evernote-v1.2.3-black-x86_64.AppImage
+            # scripts/package-appimage.js uses version from app.asar, which we want to keep in the final name but maybe prefixed with tag if it's a real release.
+            # Actually, the original code used:
+            # APPIMAGE_NAME="Evernote-${TAG_NAME}-${APPIMAGE_ARCH}.AppImage"
+            
+            APPIMAGE_ARCH_THEME="${ARCH_THEME_DIR%-*}"
+            THEME_SUFFIX="${ARCH_THEME_DIR#*-}"
+            THEME_PART=""
+            if [ "$THEME_SUFFIX" = "1" ]; then
+              THEME_PART="-black"
+            fi
+            
+            APPIMAGE_NAME="Evernote-${TAG_NAME}${THEME_PART}-${APPIMAGE_ARCH_THEME}.AppImage"
+            BUILD_INFO_NAME="build-info${THEME_PART}-${APPIMAGE_ARCH_THEME}.json"
+            
             cp "$SOURCE_APPIMAGE" "release-assets/$APPIMAGE_NAME"
-            cp "$ARCH_DIR/build-info.json" "release-assets/$BUILD_INFO_NAME"
+            cp "$ARCH_THEME_DIR/build-info.json" "release-assets/$BUILD_INFO_NAME"
           done
           cd release-assets
-          sha256sum *.AppImage build-info-*.json > SHA256SUMS
+          sha256sum *.AppImage build-info*.json > SHA256SUMS
           sha256sum -c SHA256SUMS
           cd ..
           {

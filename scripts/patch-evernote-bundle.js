@@ -329,7 +329,7 @@ const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
 const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if((0,F.Ld)())n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
 const BORON_MAC_ONLY_RESOURCE_DRAG_STYLES =
-  'if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
+  'if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.boronEnv.isMac&&n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
 const BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
 const ACTIVE_TAB_INNER_STYLES =
@@ -470,6 +470,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     search: 'backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui"',
     replacementPrefix:
       'backgroundColor:"#000000"    ,backgroundMaterial:"none",vibrancy:"fullscreen-ui"',
+    isThematic: true,
   },
   {
     resultKey: 'blackAppBackgroundThemeVariables',
@@ -480,6 +481,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     alreadyPatchedPattern: BLACK_APP_BACKGROUND_ALREADY_PATCHED_PATTERN,
     textRangeForPattern: webpackCssRuntimeStringRange,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'blackEditorBackgroundThemeVariables',
@@ -489,6 +491,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     replacementForMatch: (match) => replaceCssDeclarationValueWithBoundary(match, '#000'),
     alreadyPatchedPattern: BLACK_EDITOR_BACKGROUND_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'blackEditorDarkBackgrounds',
@@ -501,6 +504,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     },
     alreadyPatchedPattern: BLACK_EDITOR_HARDCODED_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'brighterEditorTextSelection',
@@ -510,6 +514,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     replacementForMatch: (match) => sameLengthReplacement(match, 'rgba(33,133,231,.4)'),
     alreadyPatchedPattern: EDITOR_SELECTION_BACKGROUND_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'compactEditorHorizontalPadding',
@@ -522,6 +527,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
         .replace(/padding-right:(?:48px|8px\s)/, 'padding-right:0px '),
     alreadyPatchedPattern: EDITOR_HORIZONTAL_PADDING_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'leftAlignedEditorNoteLayout',
@@ -534,6 +540,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
         : 'h=840,f=24,g=124,y=0,v=41,b=0 ,_=0 ,E="left",T=!1  ,A=40',
     alreadyPatchedPattern: EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'visibleTagSuggestionHover',
@@ -542,6 +549,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     search: TAG_SUGGESTION_HOVER_STYLES,
     replacementPrefix: TAG_SUGGESTION_HOVER_REPLACEMENT,
     replaceAll: true,
+    isThematic: true,
   },
   {
     resultKey: 'visibleDropdownItemHover',
@@ -558,6 +566,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       ),
     alreadyPatchedPattern: DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'expandedSourceUrlPillContainerWidth',
@@ -573,6 +582,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       ),
     alreadyPatchedPattern: SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'expandedSourceUrlTextWidth',
@@ -588,6 +598,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       ),
     alreadyPatchedPattern: SOURCE_URL_PILL_TEXT_MAX_WIDTH_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
   },
   {
     resultKey: 'visibleMultiSelectFloatingMenu',
@@ -595,6 +606,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8634.js',
     search: MULTI_SELECT_FLOATING_MENU_STYLES,
     replacementPrefix: MULTI_SELECT_FLOATING_MENU_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'hiddenNoteDetailFrameLine',
@@ -602,6 +614,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8078.js',
     search: NOTE_DETAIL_FRAME_SHADOW_STYLES,
     replacementPrefix: NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'nativeImageResourceClipboard',
@@ -633,6 +646,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: 'boronTabShell.js',
     search: ACTIVE_TAB_INNER_STYLES,
     replacementPrefix: ACTIVE_TAB_INNER_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'fullHeightTabButtons',
@@ -640,6 +654,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: 'boronTabShell.js',
     search: TAB_BUTTON_HEIGHT_STYLES,
     replacementPrefix: TAB_BUTTON_HEIGHT_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'minimizedCollapsedNavWidth',
@@ -647,6 +662,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8634.js',
     search: 'Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)',
     replacementPrefix: 'Q=Ia.WB,X=Math.max(Math.min(Ia.af,q),Q)',
+    isThematic: true,
   },
   {
     resultKey: 'expandedCollapsedNavPaddingToken',
@@ -655,6 +671,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '2002.js',
     search: COLLAPSED_NAV_PADDING_TOKEN_STYLES,
     replacementPrefix: COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'expandedCollapsedNavItemPadding',
@@ -663,6 +680,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '2002.js',
     search: COLLAPSED_NAV_ITEM_PADDING_STYLES,
     replacementPrefix: COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT,
+    isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavCssWidth',
@@ -670,6 +688,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '2002.js',
     search: '--nav-collapsed-width:60px;',
     replacementPrefix: '--nav-collapsed-width:30px;',
+    isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavContainerWidth',
@@ -677,6 +696,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '2002.js',
     search: 'width:60px;transition:width .2s ease-in-out',
     replacementPrefix: 'width:30px;transition:width .2s ease-in-out',
+    isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavWidthConstant',
@@ -684,6 +704,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '8453.js',
     search: 'd=60,c=96',
     replacementPrefix: 'd=30,c=96',
+    isThematic: true,
   },
   {
     resultKey: 'removedNoteSnippetSeparators',
@@ -691,6 +712,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: '3014.js',
     search: '--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);',
     replacementPrefix: '--noteSnippet-border-bottom:0px solid transparent;',
+    isThematic: true,
   },
   {
     resultKey: 'disabledInAppForceUpdateInit',
@@ -728,13 +750,17 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   },
 ];
 
-function patchEvernoteBundle(asarPath) {
+function patchEvernoteBundle(asarPath, options = {}) {
   const resolvedAsarPath = path.resolve(asarPath);
   const result = {
     asarPath: resolvedAsarPath,
   };
 
   for (const patch of patches) {
+    if (options.skipThematic && patch.isThematic) {
+      continue;
+    }
+
     if (patch.replacePattern) {
       result[patch.resultKey] = replacePatternInAsarEntries(
         resolvedAsarPath,

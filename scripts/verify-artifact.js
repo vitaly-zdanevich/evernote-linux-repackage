@@ -38,6 +38,7 @@ const REQUIRED_PATCH_MARKERS = [
   {
     name: 'browser window startup background is black',
     value: 'backgroundColor:"#000000"',
+    isThematic: true,
   },
   {
     name: 'image resource copy writes native image clipboard data',
@@ -225,9 +226,14 @@ function verifyNativeModules(portDir) {
   );
 }
 
-function verifyBundlePatches(asarPath) {
+function verifyBundlePatches(asarPath, blackTheme = true) {
   const mainJs = readAsarText(asarPath, 'main.js');
-  const missing = REQUIRED_PATCH_MARKERS.filter((marker) => !mainJs.includes(marker.value));
+  const missing = REQUIRED_PATCH_MARKERS.filter((marker) => {
+    if (!blackTheme && marker.isThematic) {
+      return false;
+    }
+    return !mainJs.includes(marker.value);
+  });
   if (missing.length > 0) {
     throw new Error(
       `Missing bundle patch marker(s): ${missing.map((marker) => marker.name).join(', ')}`,
@@ -868,6 +874,12 @@ function verifyArtifact(options) {
   const portDir = path.resolve(options.portDir);
   const asarPath = path.join(portDir, 'resources', 'app.asar');
 
+  const buildInfoPath = path.join(DIST_DIR, 'build-info.json');
+  const buildInfo = fs.existsSync(buildInfoPath)
+    ? JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'))
+    : {};
+  const blackTheme = buildInfo.blackTheme !== false;
+
   requireExecutable(path.join(portDir, 'evernote'));
   verifyElf(path.join(portDir, 'Evernote'));
   verifyElf(path.join(portDir, 'chrome-sandbox'));
@@ -875,27 +887,31 @@ function verifyArtifact(options) {
   requireFile(path.join(portDir, 'resources', 'app-update.yml'));
 
   verifyNativeModules(portDir);
-  verifyBundlePatches(asarPath);
+  verifyBundlePatches(asarPath, blackTheme);
   verifyPatchedJavaScriptSyntax(asarPath);
   verifyFlacMimePatch(asarPath);
   verifyAiCopilotDisclaimerPatch(asarPath);
-  verifyBlackBackgroundThemePatch(asarPath);
-  verifyStartupBackgroundPatch(portDir, asarPath);
-  verifyEditorTextSelectionPatch(asarPath);
-  verifyEditorHorizontalPaddingPatch(asarPath);
-  verifyEditorNoteLayoutPatch(asarPath);
-  verifyTagSuggestionHoverPatch(asarPath);
-  verifyDropdownItemHoverPatch(asarPath);
-  verifySourceUrlPillWidthPatch(asarPath);
-  verifyMultiSelectFloatingMenuPatch(asarPath);
-  verifyNoteDetailFrameLinePatch(asarPath);
+
+  if (blackTheme) {
+    verifyBlackBackgroundThemePatch(asarPath);
+    verifyStartupBackgroundPatch(portDir, asarPath);
+    verifyEditorTextSelectionPatch(asarPath);
+    verifyEditorHorizontalPaddingPatch(asarPath);
+    verifyEditorNoteLayoutPatch(asarPath);
+    verifyTagSuggestionHoverPatch(asarPath);
+    verifyDropdownItemHoverPatch(asarPath);
+    verifySourceUrlPillWidthPatch(asarPath);
+    verifyMultiSelectFloatingMenuPatch(asarPath);
+    verifyNoteDetailFrameLinePatch(asarPath);
+    verifyActiveTabTitlePatch(asarPath);
+    verifyTabButtonHitTargetPatch(asarPath);
+    verifyCollapsedNavWidthPatch(asarPath);
+    verifyCollapsedNavSpacingPatch(asarPath);
+    verifyCollapsedNavThinWidthPatch(asarPath);
+    verifyNoteSnippetSeparatorsPatch(asarPath);
+  }
+
   verifyNativeResourceDragPatch(asarPath);
-  verifyActiveTabTitlePatch(asarPath);
-  verifyTabButtonHitTargetPatch(asarPath);
-  verifyCollapsedNavWidthPatch(asarPath);
-  verifyCollapsedNavSpacingPatch(asarPath);
-  verifyCollapsedNavThinWidthPatch(asarPath);
-  verifyNoteSnippetSeparatorsPatch(asarPath);
 
   process.stdout.write(`Artifact verification passed: ${portDir}\n`);
 }

@@ -25,6 +25,7 @@ const FALLBACK_ELECTRON_VERSION = process.env.ELECTRON_VERSION || '37.6.0';
 const ELECTRON_SHA256 = normalizeSha256(process.env.ELECTRON_SHA256, 'ELECTRON_SHA256');
 const ELECTRON_EXPECTED_VERSION = process.env.ELECTRON_EXPECTED_VERSION || '';
 const BUILD_FLAVOR = process.env.BUILD_FLAVOR || (EVERNOTE_SHA256 ? 'pinned' : 'latest');
+const EVERNOTE_BLACK_THEME = process.env.EVERNOTE_BLACK_THEME !== '0';
 const TARGET_ARCH = normalizeTargetArch(
   process.env.EVERNOTE_TARGET_ARCH || process.env.TARGET_ARCH || process.arch,
 );
@@ -365,7 +366,9 @@ function build() {
 
   const outResources = path.join(outDir, 'resources');
   copyInto(path.join(payloadDir, 'resources', 'app.asar'), path.join(outResources, 'app.asar'));
-  const bundlePatchResult = patchEvernoteBundle(path.join(outResources, 'app.asar'));
+  const bundlePatchResult = patchEvernoteBundle(path.join(outResources, 'app.asar'), {
+    skipThematic: !EVERNOTE_BLACK_THEME,
+  });
   const patchCount = Object.entries(bundlePatchResult).filter(
     ([key, value]) => key !== 'asarPath' && value,
   ).length;
@@ -375,7 +378,9 @@ function build() {
     path.join(outResources, 'app.asar.unpacked'),
   );
   copyInto(path.join(payloadDir, 'resources', 'static'), path.join(outResources, 'static'));
-  patchStaticResources(outResources);
+  if (EVERNOTE_BLACK_THEME) {
+    patchStaticResources(outResources);
+  }
   copyInto(
     path.join(payloadDir, 'resources', 'app-update.yml'),
     path.join(outResources, 'app-update.yml'),
@@ -396,6 +401,7 @@ function build() {
 
   const buildInfo = {
     buildFlavor: BUILD_FLAVOR,
+    blackTheme: EVERNOTE_BLACK_THEME,
     evernoteUrl: EVERNOTE_URL,
     evernoteSha256,
     evernoteVersion: packageJson.version,
