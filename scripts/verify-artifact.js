@@ -125,6 +125,23 @@ function readAsarText(asarPath, filePath) {
   return buffer.subarray(offset, offset + Number(entry.size)).toString();
 }
 
+function webpackCssRuntimeText(text, filePath) {
+  const startMarker = 'A.push([o.id,"';
+  const startMarkerIndex = text.indexOf(startMarker);
+  if (startMarkerIndex === -1) {
+    throw new Error(`Unable to find Webpack CSS runtime string start in ${filePath}.`);
+  }
+
+  const start = startMarkerIndex + startMarker.length;
+  const endMarker = '","",{version:3';
+  const end = text.indexOf(endMarker, start);
+  if (end === -1) {
+    throw new Error(`Unable to find Webpack CSS runtime string end in ${filePath}.`);
+  }
+
+  return text.slice(start, end);
+}
+
 function readAsarEntryText(asarPath, parsedAsar, filePath, entry) {
   if (entry.unpacked) {
     return fs.readFileSync(`${asarPath}.unpacked/${filePath}`, 'utf8');
@@ -369,15 +386,25 @@ function verifyAiCopilotDisclaimerPatch(asarPath) {
 
 function verifyBlackBackgroundThemePatch(asarPath) {
   const { buffer, header, baseOffset } = parseAsarHeader(asarPath);
-  const appTheme = readAsarText(asarPath, '7839.js');
-  if (!appTheme.includes('--color-background-base-fill-primary:#000')) {
+  const appThemeRuntime = webpackCssRuntimeText(readAsarText(asarPath, '7839.js'), '7839.js');
+  if (!appThemeRuntime.includes('--color-background-base-fill-primary:#000')) {
     throw new Error('Missing black app background theme token patch.');
   }
-  if (/--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/.test(appTheme)) {
+  if (
+    /--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/.test(appThemeRuntime)
+  ) {
     throw new Error('Unpatched app background theme token remains.');
   }
-  if (!appTheme.includes('--color-note_list-base-stroke-enabled:#000')) {
+  if (!appThemeRuntime.includes('--color-note_list-base-stroke-enabled:#000')) {
     throw new Error('Missing black note list stroke theme token patch.');
+  }
+  if (!appThemeRuntime.includes('--color-button-content-fill-primary-default:#fff')) {
+    throw new Error('Missing white primary button text theme token patch.');
+  }
+  if (
+    /--color-button-content-fill-primary-default:\s*var\(--colors-grey-8\);/.test(appThemeRuntime)
+  ) {
+    throw new Error('Unpatched dark primary button text theme token remains.');
   }
 
   let editorBackgroundTokenPatched = false;

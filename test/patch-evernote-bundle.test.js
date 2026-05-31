@@ -146,6 +146,7 @@ function makePatchableAppThemeChunkJs() {
     '--color-surface-fill-primary-enabled:var(--colors-grey-100);',
     '--color-card-base-fill-enabled:var(--colors-grey-100);',
     '--color-button-base-fill-primary-default:var(--colors-secondary-blue-400);',
+    '--color-button-content-fill-primary-default:var(--colors-grey-100);',
     '--color-note_list-base-stroke-enabled:var(--colors-grey-90);',
     '--color-text-fill-primary-enabled:var(--colors-grey-8);',
     '--home-widget-pp-background-z-index:-1;',
@@ -153,6 +154,7 @@ function makePatchableAppThemeChunkJs() {
     '--color-background-base-fill-primary:var(--colors-grey-8);',
     '--color-surface-fill-primary-enabled:var(--colors-grey-8);',
     '--color-iconbutton-base-fill-primary-hover:var(--colors-grey-opacitywhite08);',
+    '--color-button-content-fill-primary-default:var(--colors-grey-8);',
     '--color-text-fill-primary-enabled:var(--colors-grey-100);',
     '}',
   ].join('');
@@ -400,6 +402,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.match(patchedAppThemeChunkJs, /--color-background-base-fill-primary:#000\s+;/);
     assert.match(patchedAppThemeChunkJs, /--color-surface-fill-primary-enabled:#000\s+;/);
     assert.match(patchedAppThemeChunkJs, /--color-button-base-fill-primary-default:#000\s+;/);
+    assert.match(patchedAppThemeChunkJs, /--color-button-content-fill-primary-default:#fff\s+;/);
     assert.match(patchedAppThemeChunkJs, /--color-note_list-base-stroke-enabled:#000\s+;/);
     assert.match(
       patchedAppThemeChunkJs,
@@ -413,6 +416,10 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotMatch(
       patchedAppThemeChunkJs,
       /--color-background-base-fill-primary:var\(--colors-grey-(?:100|8)\);/,
+    );
+    assert.doesNotMatch(
+      patchedAppThemeChunkJs,
+      /--color-button-content-fill-primary-default:var\(--colors-grey-8\);/,
     );
     assert.doesNotThrow(() => new Function(patchedAppThemeChunkJs));
     const patchedEditorCss = readMinimalAsarEntry(asarPath, 'ce/ce-test.css');

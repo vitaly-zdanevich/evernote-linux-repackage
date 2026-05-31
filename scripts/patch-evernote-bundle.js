@@ -270,6 +270,11 @@ const BLACK_APP_BACKGROUND_VARIABLE_PATTERN =
   /(?:(?<=^)|(?<=[;{]))--color-(?:background-[-a-z0-9]*|surface-fill-[-a-z0-9]*|card-base-fill-[-a-z0-9]*|input-base-fill-[-a-z0-9]*|button-base-fill-[-a-z0-9]*|textbutton-base-fill-[-a-z0-9]*|iconbutton-base-fill-[-a-z0-9]*|feedback-base-fill-[-a-z0-9]*|filterpill-base-fill-[-a-z0-9]*|tooltip-base-fill-[-a-z0-9]*|toast-base-fill-[-a-z0-9]*|toast-button-base-fill-[-a-z0-9]*|descriptivetooltip-base-fill-[-a-z0-9]*|descriptivetooltip-button-base-fill-[-a-z0-9]*|calendar_block-highlight-fill-[-a-z0-9]*|note_list-base-stroke-[-a-z0-9]*):[^;"]+;/gi;
 const BLACK_APP_BACKGROUND_ALREADY_PATCHED_PATTERN =
   /(?:(?<=^)|(?<=[;{]))--color-(?:background-[-a-z0-9]*|surface-fill-[-a-z0-9]*|card-base-fill-[-a-z0-9]*|input-base-fill-[-a-z0-9]*|button-base-fill-[-a-z0-9]*|textbutton-base-fill-[-a-z0-9]*|iconbutton-base-fill-[-a-z0-9]*|feedback-base-fill-[-a-z0-9]*|filterpill-base-fill-[-a-z0-9]*|tooltip-base-fill-[-a-z0-9]*|toast-base-fill-[-a-z0-9]*|toast-button-base-fill-[-a-z0-9]*|descriptivetooltip-base-fill-[-a-z0-9]*|descriptivetooltip-button-base-fill-[-a-z0-9]*|calendar_block-highlight-fill-[-a-z0-9]*|note_list-base-stroke-[-a-z0-9]*):#000\s*;/gi;
+const PRIMARY_BUTTON_TEXT_FILE_PATTERN = /^7839\.js$/;
+const PRIMARY_BUTTON_TEXT_PATTERN =
+  /(?:(?<=^)|(?<=[;{]))--color-button-content-fill-primary-default:\s*var\(--colors-grey-8\);/g;
+const PRIMARY_BUTTON_TEXT_ALREADY_PATCHED_PATTERN =
+  /(?:(?<=^)|(?<=[;{]))--color-button-content-fill-primary-default:\s*#fff\s*;/g;
 
 const BLACK_EDITOR_BACKGROUND_FILE_PATTERN =
   /^(?:4701\.js|ce\/(?:ce-[^/]+\.css|TextViewer\.[^/]+\.css|PdfViewer\.[^/]+\.css|SpreadsheetViewer\.[^/]+\.css|VideoViewer\.[^/]+\.css)|ce\/chunks\/9008\.[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless|TextViewer\.[^/]+|PdfViewer\.[^/]+|SpreadsheetViewer\.[^/]+|VideoViewer\.[^/]+)\.css|node_modules\/@evernote\/common-editor\/chunks\/9008\.[^/]+\.js)$/;
@@ -484,6 +489,17 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     pattern: BLACK_APP_BACKGROUND_VARIABLE_PATTERN,
     replacementForMatch: (match) => replaceCssDeclarationValueWithBoundary(match, '#000'),
     alreadyPatchedPattern: BLACK_APP_BACKGROUND_ALREADY_PATCHED_PATTERN,
+    textRangeForPattern: webpackCssRuntimeStringRange,
+    replacePattern: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'whitePrimaryButtonText',
+    description: 'made primary button text white on black theme',
+    filePattern: PRIMARY_BUTTON_TEXT_FILE_PATTERN,
+    pattern: PRIMARY_BUTTON_TEXT_PATTERN,
+    replacementForMatch: (match) => replaceCssDeclarationValueWithBoundary(match, '#fff'),
+    alreadyPatchedPattern: PRIMARY_BUTTON_TEXT_ALREADY_PATCHED_PATTERN,
     textRangeForPattern: webpackCssRuntimeStringRange,
     replacePattern: true,
     isThematic: true,
