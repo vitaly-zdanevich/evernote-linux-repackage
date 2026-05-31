@@ -356,7 +356,6 @@ function packageAppImage({ portDir, appDir, output, appDirOnly }) {
     output || path.join(DIST_DIR, `Evernote-${version}${themeSuffix}-${appImageArch}.AppImage`);
   const preparedAppDir = prepareAppDir({ portDir: resolvedPortDir, appDir });
 
-
   if (appDirOnly) {
     log(`Prepared ${preparedAppDir}`);
     return { appDir: preparedAppDir, outputPath: null };
