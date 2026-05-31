@@ -340,6 +340,12 @@ const BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
   /if\(e\.isBoron\)t\.payload\.event\.preventDefault\(\),n\.broker\.call\("boron\.actions\.setNativeFilesForDrag"/g;
 const BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
+const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_STYLES =
+  'let n=!1;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
+const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT =
+  'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
+const IMPORT_FOLDER_IGNORE_INITIAL_STYLES = 'ignoreInitial:!1';
+const IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT = 'ignoreInitial:!0';
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -669,6 +675,20 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       sameLengthReplacement(match, BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT),
     alreadyPatchedPattern: BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+  },
+  {
+    resultKey: 'enabledImportFolderFilesOnLinux',
+    description: 'enabled sync-folder file import decisions on Linux',
+    filePath: 'main.js',
+    search: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_STYLES,
+    replacementPrefix: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT,
+  },
+  {
+    resultKey: 'ignoredInitialImportFolderScan',
+    description: 'ignored sync-folder initial watcher scan to avoid duplicate imports on Linux',
+    filePath: 'main.js',
+    search: IMPORT_FOLDER_IGNORE_INITIAL_STYLES,
+    replacementPrefix: IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',

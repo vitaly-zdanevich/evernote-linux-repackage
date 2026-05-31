@@ -48,6 +48,14 @@ const REQUIRED_PATCH_MARKERS = [
     name: 'resource drag exposes the first native file path',
     value: 't?.startDrag({file:n[0]||"",files:n,icon:',
   },
+  {
+    name: 'sync-folder file import decisions enabled on Linux',
+    value: 'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n',
+  },
+  {
+    name: 'sync-folder initial watcher scan ignored on Linux',
+    value: 'ignoreInitial:!0',
+  },
 ];
 
 const REQUIRED_LINUX_NATIVE_MODULES = [

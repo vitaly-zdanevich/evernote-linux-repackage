@@ -89,6 +89,7 @@ function makePatchableMainJs() {
     'const h={app:{quit(){}}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
     'let S=async(t,a)=>{let n=await A(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await A(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
+    'const I=/(^|[\\/\\\\])\\./,i={default:{isMac:false,isWin:false}},R={ignored:[t=>L(t),I],depth:0,ignoreInitial:!1,followSymlinks:!1};async function U(t){return false}async function B(t){return false}async function shouldImportFolderFile(t){let n=!1;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n}',
     'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
     'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
   ].join('');
@@ -363,9 +364,19 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedMainJs,
       /N=async t=>\{let a=await A\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
     );
+    assert.match(patchedMainJs, /ignoreInitial:!0/);
+    assert.match(
+      patchedMainJs,
+      /let n=!0;return i\.default\.isMac\?n=await U\(t\):i\.default\.isWin&&\(n=await B\(t\)\),n/,
+    );
     assert.match(patchedMainJs, /t\?\.startDrag\(\{file:n\[0\]\|\|"",files:n,icon:/);
     assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
     assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
+    assert.doesNotMatch(patchedMainJs, /ignoreInitial:!1/);
+    assert.doesNotMatch(
+      patchedMainJs,
+      /let n=!1;return i\.default\.isMac\?n=await U\(t\):i\.default\.isWin&&\(n=await B\(t\)\),n/,
+    );
     assert.doesNotMatch(
       patchedMainJs,
       /N=async t=>\{let a=await A\(t\);o\?\.writeFilePaths\(a\)\}/,
