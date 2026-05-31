@@ -76,7 +76,7 @@ function makePatchableMainJs() {
     'class MainWindowTabManager {',
     'preloadWarmTab(){if(this.warmTab||this.isPreloadingWarmTab)return;this.isPreloadingWarmTab=!0;}',
     '}',
-    'class S {',
+    'class AutoUpdaterPatch {',
     'init(t,a){if(this._initialized)return void E.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0,this.autoUpdater.logger=E,this.autoUpdater.autoDownload=!1}',
     'async _checkForUpdates(){try{let t=this._promiseCheckForUpdates;if(!t){let a=()=>{this._promiseCheckForUpdates=void 0};t=this.autoUpdater.checkForUpdates().then(()=>({updateAvailable:true}))}return t}catch(t){return {}}}',
     '}',
@@ -88,7 +88,7 @@ function makePatchableMainJs() {
     '}',
     'const h={app:{quit(){}}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
-    'let A=async(t,a)=>{let n=await S(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await S(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
+    'let S=async(t,a)=>{let n=await A(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await A(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
     'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
     'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
   ].join('');
@@ -135,7 +135,7 @@ function extractMetadataFromHeaders(headers) {
 }
 
 function makePatchableAudioPlayerChunkJs() {
-  return `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e};function Ut(){return"Evernote AI Assistant can make mistakes."}const R={api:{},disclaimer:{text:Ut()},initialThread:null};`;
+  return `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e};function Kt(){return"Evernote AI Assistant can make mistakes."}const R={api:{},disclaimer:{text:Kt()},initialThread:null};`;
 }
 
 function makePatchableAppThemeChunkJs() {
@@ -359,14 +359,14 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.match(
       patchedMainJs,
-      /N=async t=>\{let a=await S\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
+      /N=async t=>\{let a=await A\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
     );
     assert.match(patchedMainJs, /t\?\.startDrag\(\{file:n\[0\]\|\|"",files:n,icon:/);
     assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
     assert.doesNotMatch(patchedMainJs, /backgroundColor:"transparent"/);
     assert.doesNotMatch(
       patchedMainJs,
-      /N=async t=>\{let a=await S\(t\);o\?\.writeFilePaths\(a\)\}/,
+      /N=async t=>\{let a=await A\(t\);o\?\.writeFilePaths\(a\)\}/,
     );
     assert.doesNotMatch(
       patchedMainJs,
@@ -391,7 +391,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.match(patchedAudioPlayerChunkJs, /n\.onerror=r/);
     assert.doesNotMatch(patchedAudioPlayerChunkJs, /return r\[e\]\|\|e/);
     assert.match(patchedAudioPlayerChunkJs, /disclaimer:void 0\s+,initialThread:null/);
-    assert.doesNotMatch(patchedAudioPlayerChunkJs, /disclaimer:\{text:Ut\(\)\}/);
+    assert.doesNotMatch(patchedAudioPlayerChunkJs, /disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/);
     assert.doesNotMatch(patchedMainResourceProxyJs, /headers\['content-type'\]\) !== null/);
     assert.doesNotMatch(patchedMainResourceProxyJs, /'Content-Type': resource\.meta\.mime/);
     assert.doesNotThrow(() => new Function(patchedMainResourceProxyJs));

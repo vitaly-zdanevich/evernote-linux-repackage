@@ -166,7 +166,8 @@ function replacePatternInAsarEntries(
     const patchedTargetText = targetText.replace(pattern, (...args) => {
       matches += 1;
       const match = args[0];
-      const replacement = replacementForMatch(match, filePath);
+      const captures = args.slice(1, -2);
+      const replacement = replacementForMatch(match, filePath, ...captures);
       if (Buffer.byteLength(replacement) !== Buffer.byteLength(match)) {
         throw new Error(`Replacement for ${filePath} must preserve byte length.`);
       }
@@ -320,16 +321,18 @@ const NOTE_DETAIL_FRAME_SHADOW_STYLES =
   'box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
 const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
   'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
-const NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES =
-  'let A=async(t,a)=>{let n=await S(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await S(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
-const NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT =
-  'let A=async(t,a)=>{let n=await S(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await S(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}';
+const NATIVE_IMAGE_RESOURCE_CLIPBOARD_PATTERN =
+  /let ([A-Za-z_$][\w$]*)=async\(t,a\)=>\{let n=await ([A-Za-z_$][\w$]*)\(a\);await \(0,s\.sleep\)\(100\);try\{t\?\.startDrag\(\{file:"",files:n,icon:l\.nativeImage\.createFromDataURL\(p\.default\)\}\)\}catch\(t\)\{b\.error\("setNativeFilesForDrag error",t\.message\)\}\},N=async t=>\{let a=await \2\(t\);o\?\.writeFilePaths\(a\)\},M=t=>\{l\.clipboard\.write\(\{text:t,html:t\}\)\};function w\(\)\{return\{plain:l\.clipboard\.readText\(\),html:l\.clipboard\.readHTML\(\)\}\}/g;
+const NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN =
+  /n\.isEmpty\(\)\?o\?\.writeFilePaths\(a\):l\.clipboard\.writeImage\(n\)/g;
 const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
   'if((0,F.Ld)()&&x.Z.isMac)n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
 const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if((0,F.Ld)())n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
-const BORON_MAC_ONLY_RESOURCE_DRAG_STYLES =
-  'if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.boronEnv.isMac&&n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
+const BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN =
+  /if\(e\.isBoron&&n\.boronEnv\.isMac\)t\.payload\.event\.preventDefault\(\),(?:n\.boronEnv\.isMac&&)?n\.broker\.call\("boron\.actions\.setNativeFilesForDrag",o\.resources\.map\(\(e=>\(\{url:e\.url,filename:e\.filename\?\?"",mime:e\.mime\}\)\)\)\);else\{const e=o\.resources\[0\];if\(e\)\{const\{filename:t=`\$\{n\.now\(\)\}`,mime:o,url:a\}=e;a&&r\.setData\("DownloadURL",`\$\{o\}:\$\{t\}:\$\{a\}`\)\}\}/g;
+const BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
+  /if\(e\.isBoron\)t\.payload\.event\.preventDefault\(\),n\.broker\.call\("boron\.actions\.setNativeFilesForDrag"/g;
 const BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
 const ACTIVE_TAB_INNER_STYLES =
@@ -459,9 +462,11 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'disabledAiCopilotComposerDisclaimer',
     description: 'disabled AI Assistant composer disclaimer',
-    filePath: '172.js',
-    search: 'disclaimer:{text:Ut()}',
-    replacementPrefix: 'disclaimer:void 0',
+    filePattern: /^172\.js$/,
+    pattern: /disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/g,
+    replacementForMatch: (match) => sameLengthReplacement(match, 'disclaimer:void 0'),
+    alreadyPatchedPattern: /disclaimer:void 0/g,
+    replacePattern: true,
   },
   {
     resultKey: 'blackBrowserWindowBackground',
@@ -554,7 +559,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'visibleDropdownItemHover',
     description: 'made dropdown menu item hover background visible on black theme',
-    filePattern: /^1957\.js$/,
+    filePattern: /\.js$/,
     pattern: DROPDOWN_ITEM_HOVER_PATTERN,
     replacementForMatch: (match) =>
       sameLengthReplacement(
@@ -620,9 +625,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'nativeImageResourceClipboard',
     description:
       'copied image resources as native image clipboard data because image copy does not work on Linux without it',
-    filePath: 'main.js',
-    search: NATIVE_IMAGE_RESOURCE_CLIPBOARD_STYLES,
-    replacementPrefix: NATIVE_IMAGE_RESOURCE_CLIPBOARD_REPLACEMENT,
+    filePattern: /^main\.js$/,
+    pattern: NATIVE_IMAGE_RESOURCE_CLIPBOARD_PATTERN,
+    replacementForMatch: (match, _filePath, dragFunctionName, tempFileFunctionName) =>
+      sameLengthReplacement(
+        match,
+        `let ${dragFunctionName}=async(t,a)=>{let n=await ${tempFileFunctionName}(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await ${tempFileFunctionName}(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}`,
+      ),
+    alreadyPatchedPattern: NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: 'nativeResourceDragFromCommonEditor',
@@ -636,9 +647,12 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'nativeResourceDragFromBoron',
     description:
       'used native resource file dragging from the Boron editor because dragging does not work on Linux without it',
-    filePath: '8078.js',
-    search: BORON_MAC_ONLY_RESOURCE_DRAG_STYLES,
-    replacementPrefix: BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT,
+    filePattern: /^8078\.js$/,
+    pattern: BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(match, BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT),
+    alreadyPatchedPattern: BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',

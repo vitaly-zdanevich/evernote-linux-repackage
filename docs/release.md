@@ -14,7 +14,7 @@ v<evernote-version>-<package-revision>
 Example:
 
 ```text
-v11.17.3-1
+v11.18.1-1
 ```
 
 Use the Evernote desktop version for `<evernote-version>`. Increase
@@ -55,8 +55,8 @@ Confirm `.github/workflows/ci.yml` still pins:
 Create and push a tag:
 
 ```bash
-git tag -a v11.17.3-1 -m "evernote-linux-repackage v11.17.3-1"
-git push origin v11.17.3-1
+git tag -a v11.18.1-1 -m "evernote-linux-repackage v11.18.1-1"
+git push origin v11.18.1-1
 ```
 
 The tag workflow runs:
@@ -136,4 +136,4 @@ Check the release page:
 - the release notes include the unofficial/proprietary warning
 
 If a release is bad, prefer creating a new package revision tag such as
-`v11.17.3-2` instead of replacing files silently.
+`v11.18.1-2` instead of replacing files silently.

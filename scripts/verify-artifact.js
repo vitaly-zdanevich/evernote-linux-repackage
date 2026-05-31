@@ -261,7 +261,6 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     '4701.js',
     '3645.js',
     '8078.js',
-    '1957.js',
     '8634.js',
     '2002.js',
     '8453.js',
@@ -274,7 +273,6 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     /^7839\.js$/,
     /^3645\.js$/,
     /^8078\.js$/,
-    /^1957\.js$/,
     /^8634\.js$/,
     /^2002\.js$/,
     /^8453\.js$/,
@@ -359,7 +357,7 @@ function verifyFlacMimePatch(asarPath) {
 
 function verifyAiCopilotDisclaimerPatch(asarPath) {
   const aiCopilotRuntime = readAsarText(asarPath, '172.js');
-  if (aiCopilotRuntime.includes('disclaimer:{text:Ut()}')) {
+  if (/disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/.test(aiCopilotRuntime)) {
     throw new Error('Unpatched AI Assistant composer disclaimer config remains.');
   }
   if (!aiCopilotRuntime.includes('disclaimer:void 0')) {
@@ -627,19 +625,42 @@ function verifyTagSuggestionHoverPatch(asarPath) {
 }
 
 function verifyDropdownItemHoverPatch(asarPath) {
-  const dropdownItemRuntime = readAsarText(asarPath, '1957.js');
+  const parsedAsar = parseAsarHeader(asarPath);
   const stalePattern =
     /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/;
   const patchedPattern =
     /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:#1f1f1f\s*\}\1:active\{scale:\.99\}/;
+  const staleFiles = [];
+  const patchedFiles = [];
+  const dropdownStyleFiles = [];
 
-  if (stalePattern.test(dropdownItemRuntime)) {
-    throw new Error('Unpatched dropdown menu item hover background remains.');
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !filePath.endsWith('.js')) {
+      return;
+    }
+
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (stalePattern.test(text)) {
+      staleFiles.push(filePath);
+    }
+    if (patchedPattern.test(text)) {
+      patchedFiles.push(filePath);
+      assertJavaScriptSyntax(filePath, text);
+    }
+    if (text.includes('components/DropdownItem/styles.css')) {
+      dropdownStyleFiles.push(filePath);
+    }
+  });
+
+  if (staleFiles.length > 0) {
+    throw new Error(
+      `Unpatched dropdown menu item hover background remains in ${staleFiles.join(', ')}.`,
+    );
   }
-  if (!patchedPattern.test(dropdownItemRuntime)) {
+  if (patchedFiles.length < 1) {
     throw new Error('Missing visible dropdown menu item hover background marker.');
   }
-  if (!dropdownItemRuntime.includes('components/DropdownItem/styles.css')) {
+  if (dropdownStyleFiles.length < 1) {
     throw new Error('DropdownItem stylesheet marker is missing.');
   }
   if (!readAsarText(asarPath, '172.js').includes('Action.note.openInLiteEditor')) {
