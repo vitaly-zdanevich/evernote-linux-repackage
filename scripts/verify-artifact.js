@@ -546,7 +546,15 @@ function verifyStartupBackgroundPatch(portDir, asarPath) {
     'splashscreen',
     'splashscreen.html',
   );
+  const splashLogoPath = path.join(
+    portDir,
+    'resources',
+    'static',
+    'splashscreen',
+    'splashLogo.svg',
+  );
   const splashScreen = fs.readFileSync(splashScreenPath, 'utf8');
+  const splashLogo = fs.readFileSync(splashLogoPath, 'utf8');
 
   if (mainJs.includes('backgroundColor:"transparent"')) {
     throw new Error('Unpatched transparent Electron window startup background remains.');
@@ -563,8 +571,29 @@ function verifyStartupBackgroundPatch(portDir, asarPath) {
   if (!/background: rgb\(0 0 0\);/.test(splashScreen)) {
     throw new Error('Missing black splash screen media background marker.');
   }
+  if (!splashScreen.includes('class="evernote-splash"')) {
+    throw new Error('Missing animated Evernote splash screen container.');
+  }
+  if (!splashScreen.includes('class="evernote-splash__logo"')) {
+    throw new Error('Missing Evernote splash screen logo markup.');
+  }
+  if (!splashScreen.includes('src="./splashLogo.svg"')) {
+    throw new Error('Missing Evernote splash screen logo source.');
+  }
+  if (!splashScreen.includes('@keyframes evernote-splash-logo')) {
+    throw new Error('Missing Evernote splash screen logo animation.');
+  }
+  if (!splashLogo.includes('fill="white"')) {
+    throw new Error('Missing white Evernote splash logo text.');
+  }
+  if (splashLogo.includes('fill="black"')) {
+    throw new Error('Unpatched black Evernote splash logo text remains.');
+  }
+  if (!splashLogo.includes('fill="#00A82D"')) {
+    throw new Error('Missing green Evernote splash logo mark.');
+  }
 
-  process.stdout.write('Verified startup window and splash backgrounds are black.\n');
+  process.stdout.write('Verified startup window background and animated splash screen.\n');
 }
 
 function verifyEditorTextSelectionPatch(asarPath) {

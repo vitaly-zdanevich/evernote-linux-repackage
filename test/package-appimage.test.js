@@ -10,6 +10,7 @@ const {
   appRunScript,
   findSharedLibrary,
   resolvePortableSourceDir,
+  splashScript,
 } = require('../scripts/package-appimage');
 
 test('maps supported Node architectures to AppImage architectures', () => {
@@ -27,7 +28,26 @@ test('AppRun points Electron at bundled AppImage runtime libraries', () => {
   assert.match(script, new RegExp(`BUNDLED_LIB_DIR="\\$APPDIR/${APPIMAGE_RUNTIME_LIB_DIR}"`));
   assert.match(script, /LD_LIBRARY_PATH="\$BUNDLED_LIB_DIR:\$LD_LIBRARY_PATH"/);
   assert.match(script, /LD_LIBRARY_PATH="\$BUNDLED_LIB_DIR"/);
-  assert.match(script, /exec "\$APPDIR\/usr\/lib\/evernote\/evernote" "\$@"/);
+  assert.match(script, /start_splash/);
+  assert.match(script, /command -v wish/);
+  assert.match(script, /appimage-splash\.tcl/);
+  assert.match(script, /appimage-splash-logo\.png/);
+  assert.match(script, /awk '\{print tolower\(\$3\)\}'/);
+  assert.match(script, /grep -E '\(\^\|\\\.\)evernote\(\\\.\|\$\)'/);
+  assert.doesNotMatch(script, /grep -i 'Evernote'/);
+  assert.match(script, /"\$APPDIR\/usr\/lib\/evernote\/evernote" "\$@" &/);
+  assert.match(script, /wait "\$EVERNOTE_PID"/);
+});
+
+test('AppImage pre-splash renders a black Evernote loading window', () => {
+  const script = splashScript();
+
+  assert.match(script, /wm overrideredirect \.splash 1/);
+  assert.match(script, /\.splash configure -background "#000000"/);
+  assert.match(script, /image create photo evernote_logo -file \$logo_path/);
+  assert.match(script, /-fill "#00A82D"/);
+  assert.match(script, /proc animate_splash/);
+  assert.match(script, /after 15000 exit/);
 });
 
 test('packager returns null for missing shared libraries', () => {

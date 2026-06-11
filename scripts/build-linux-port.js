@@ -266,11 +266,29 @@ function makeLauncher(outDir) {
   fs.chmodSync(launcherPath, 0o755);
 }
 
+function makeSplashLogo(resourcesDir) {
+  const sourceLogoPath = path.join(resourcesDir, 'static', 'gen', 'aboutWindow', 'aboutLogo.svg');
+  if (!fs.existsSync(sourceLogoPath)) {
+    throw new Error(`Evernote splash logo source not found: ${sourceLogoPath}`);
+  }
+
+  const sourceLogo = fs.readFileSync(sourceLogoPath, 'utf8');
+  const splashLogo = sourceLogo.replace(/fill="black"/g, 'fill="white"');
+  if (splashLogo === sourceLogo) {
+    throw new Error(`Evernote splash logo patch target not found: ${sourceLogoPath}`);
+  }
+
+  const splashLogoPath = path.join(resourcesDir, 'static', 'splashscreen', 'splashLogo.svg');
+  fs.writeFileSync(splashLogoPath, splashLogo);
+}
+
 function patchStaticResources(resourcesDir) {
   const splashScreenPath = path.join(resourcesDir, 'static', 'splashscreen', 'splashscreen.html');
   if (!fs.existsSync(splashScreenPath)) {
     throw new Error(`Splash screen not found: ${splashScreenPath}`);
   }
+
+  makeSplashLogo(resourcesDir);
 
   const source = fs.readFileSync(splashScreenPath, 'utf8');
   const patched = source
@@ -283,6 +301,80 @@ function patchStaticResources(resourcesDir) {
     .replace(
       '<body style="height: 100%; width: 100%">',
       '<body style="height: 100%; width: 100%; background: #000; color: #fff">',
+    )
+    .replace(
+      '    </style>',
+      [
+        '      .evernote-splash {',
+        '        align-items: center;',
+        '        background: #000;',
+        '        box-sizing: border-box;',
+        '        display: flex;',
+        '        flex-direction: column;',
+        '        gap: 22px;',
+        '        height: 100%;',
+        '        justify-content: center;',
+        '        margin: 0;',
+        '        min-height: 100%;',
+        '        width: 100%;',
+        '      }',
+        '',
+        '      .evernote-splash__logo {',
+        '        animation: evernote-splash-logo 1800ms ease-in-out infinite;',
+        '        height: auto;',
+        '        max-width: 46vw;',
+        '        width: 190px;',
+        '      }',
+        '',
+        '      .evernote-splash__scan {',
+        '        animation: evernote-splash-scan 1200ms ease-in-out infinite;',
+        '        background: linear-gradient(90deg, transparent, rgb(0 168 45), transparent);',
+        '        border-radius: 999px;',
+        '        height: 2px;',
+        '        opacity: 0.85;',
+        '        width: 120px;',
+        '      }',
+        '',
+        '      @keyframes evernote-splash-logo {',
+        '        0%,',
+        '        100% {',
+        '          filter: drop-shadow(0 0 0 rgb(0 168 45 / 0));',
+        '          opacity: 0.78;',
+        '          transform: translateY(0) scale(0.985);',
+        '        }',
+        '',
+        '        50% {',
+        '          filter: drop-shadow(0 0 22px rgb(0 168 45 / 0.32));',
+        '          opacity: 1;',
+        '          transform: translateY(-1px) scale(1);',
+        '        }',
+        '      }',
+        '',
+        '      @keyframes evernote-splash-scan {',
+        '        0%,',
+        '        100% {',
+        '          opacity: 0.18;',
+        '          transform: scaleX(0.55);',
+        '        }',
+        '',
+        '        50% {',
+        '          opacity: 0.9;',
+        '          transform: scaleX(1);',
+        '        }',
+        '      }',
+        '    </style>',
+      ].join('\n'),
+    )
+    .replace(
+      /<body style="height: 100%; width: 100%(?:; background: #000; color: #fff)?">[\s\S]*?<\/body>/,
+      [
+        '  <body style="height: 100%; width: 100%; background: #000; color: #fff">',
+        '    <main class="evernote-splash" aria-label="Evernote is starting">',
+        '      <img class="evernote-splash__logo" src="./splashLogo.svg" alt="Evernote" />',
+        '      <div class="evernote-splash__scan" aria-hidden="true"></div>',
+        '    </main>',
+        '  </body>',
+      ].join('\n'),
     );
 
   if (patched === source) {

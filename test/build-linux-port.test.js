@@ -94,8 +94,14 @@ test('static splash screen starts with black backgrounds', () => {
   try {
     const resourcesDir = path.join(tempDir, 'resources');
     const splashDir = path.join(resourcesDir, 'static', 'splashscreen');
+    const logoDir = path.join(resourcesDir, 'static', 'gen', 'aboutWindow');
     const splashPath = path.join(splashDir, 'splashscreen.html');
     fs.mkdirSync(splashDir, { recursive: true });
+    fs.mkdirSync(logoDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(logoDir, 'aboutLogo.svg'),
+      '<svg><path fill="black" /><path fill="#00A82D" /></svg>\n',
+    );
     fs.writeFileSync(
       splashPath,
       [
@@ -127,11 +133,21 @@ test('static splash screen starts with black backgrounds', () => {
     patchStaticResources(resourcesDir);
 
     const patched = fs.readFileSync(splashPath, 'utf8');
+    const splashLogo = fs.readFileSync(path.join(splashDir, 'splashLogo.svg'), 'utf8');
+
     assert.match(patched, /<html style="[^"]*background: #000"/);
     assert.match(patched, /<body style="[^"]*background: #000; color: #fff"/);
+    assert.match(patched, /class="evernote-splash"/);
+    assert.match(patched, /class="evernote-splash__logo"/);
+    assert.match(patched, /src="\.\/splashLogo\.svg"/);
+    assert.match(patched, /@keyframes evernote-splash-logo/);
+    assert.match(patched, /@keyframes evernote-splash-scan/);
     assert.match(patched, /background: rgb\(0 0 0\);/);
     assert.doesNotMatch(patched, /background: rgb\(255 255 255\);/);
     assert.doesNotMatch(patched, /color: rgb\(26 26 26\);/);
+    assert.match(splashLogo, /fill="white"/);
+    assert.match(splashLogo, /fill="#00A82D"/);
+    assert.doesNotMatch(splashLogo, /fill="black"/);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }

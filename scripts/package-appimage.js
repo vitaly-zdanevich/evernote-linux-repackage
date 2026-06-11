@@ -225,18 +225,23 @@ function readTemplate(fileName) {
   return fs.readFileSync(path.join(TEMPLATE_DIR, fileName), 'utf8');
 }
 
+function imageConverter() {
+  const magick = commandPath('magick');
+  const convert = commandPath('convert');
+  const converter = magick || convert;
+  if (!converter) {
+    throw new Error("ImageMagick is required to convert Evernote's icons.");
+  }
+  return converter;
+}
+
 function convertIcon(portDir, appDir) {
   const sourceIcon = path.join(portDir, 'resources', 'static', 'win', 'icons', 'icon.ico');
   if (!fs.existsSync(sourceIcon)) {
     throw new Error(`Evernote icon not found: ${sourceIcon}`);
   }
 
-  const magick = commandPath('magick');
-  const convert = commandPath('convert');
-  const converter = magick || convert;
-  if (!converter) {
-    throw new Error("ImageMagick is required to convert Evernote's ICO icon to PNG.");
-  }
+  const converter = imageConverter();
 
   const rootIcon = path.join(appDir, 'evernote.png');
   const hicolorIcon = path.join(
@@ -253,6 +258,25 @@ function convertIcon(portDir, appDir) {
 
   run(converter, [`${sourceIcon}[0]`, rootIcon]);
   fs.copyFileSync(rootIcon, hicolorIcon);
+}
+
+function convertSplashLogo(appDir) {
+  const sourceLogo = path.join(
+    appDir,
+    'usr',
+    'lib',
+    'evernote',
+    'resources',
+    'static',
+    'splashscreen',
+    'splashLogo.svg',
+  );
+  if (!fs.existsSync(sourceLogo)) {
+    return;
+  }
+
+  const targetLogo = path.join(appDir, 'usr', 'lib', 'evernote', 'appimage-splash-logo.png');
+  run(imageConverter(), ['-background', 'none', sourceLogo, `PNG32:${targetLogo}`]);
 }
 
 function bundleRuntimeLibraries(appDir) {
@@ -276,6 +300,10 @@ function bundleRuntimeLibraries(appDir) {
 
 function appRunScript() {
   return readTemplate('appimage-AppRun.sh');
+}
+
+function splashScript() {
+  return readTemplate('appimage-splash.tcl');
 }
 
 function resolvePortableSourceDir(portDir) {
@@ -325,8 +353,10 @@ function prepareAppDir({ portDir, appDir }) {
 
   bundleRuntimeLibraries(resolvedAppDir);
   writeFileExecutable(path.join(resolvedAppDir, 'AppRun'), appRunScript());
+  writeFileExecutable(path.join(appLibDir, 'appimage-splash.tcl'), splashScript());
 
   convertIcon(resolvedPortDir, resolvedAppDir);
+  convertSplashLogo(resolvedAppDir);
 
   return resolvedAppDir;
 }
@@ -433,4 +463,5 @@ module.exports = {
   packageAppImage,
   prepareAppDir,
   resolvePortableSourceDir,
+  splashScript,
 };
