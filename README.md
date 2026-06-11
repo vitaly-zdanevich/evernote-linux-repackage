@@ -24,8 +24,6 @@ If you use Evernote on Linux, consider writing to Evernote and asking for an off
 
 ## Screenshots
 
-![Evernote import settings](docs/screenshots/import-settings.webp)
-
 ![Evernote export dialog](docs/screenshots/export-dialog.webp)
 
 ## Differences From Evernote Web
