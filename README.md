@@ -60,6 +60,19 @@ sudo apt install nodejs npm curl p7zip-full unzip build-essential pkg-config lib
 
 On Gentoo-like systems, make sure `app-arch/p7zip`, `net-misc/curl`, `app-arch/unzip`, `dev-util/pkgconf`, `app-crypt/libsecret`, and `gnome-base/gnome-keyring` are installed.
 
+## Gentoo Install
+
+Gentoo users can install the packaged AppImage from the `::gentoo-zh` overlay as [`app-office/evernote-repack`](https://github.com/microcai/gentoo-zh/tree/master/app-office/evernote-repack):
+
+```bash
+emerge -av app-eselect/eselect-repository
+eselect repository enable gentoo-zh
+emaint sync -r gentoo-zh
+emerge -av app-office/evernote-repack
+```
+
+The ebuild installs the black-themed build by default and extracts the AppImage into `/opt` for better startup performance. Use `USE=stock` for the upstream-style UI, or `USE=appimage` if you specifically want to install the raw AppImage instead.
+
 ## Build
 
 ```bash
