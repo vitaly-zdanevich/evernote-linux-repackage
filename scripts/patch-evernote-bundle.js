@@ -327,7 +327,7 @@ const NOTE_DETAIL_FRAME_SHADOW_STYLES =
 const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
   'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_PATTERN =
-  /let ([A-Za-z_$][\w$]*)=async\(t,a\)=>\{let n=await ([A-Za-z_$][\w$]*)\(a\);await \(0,s\.sleep\)\(100\);try\{t\?\.startDrag\(\{file:"",files:n,icon:l\.nativeImage\.createFromDataURL\(p\.default\)\}\)\}catch\(t\)\{b\.error\("setNativeFilesForDrag error",t\.message\)\}\},N=async t=>\{let a=await \2\(t\);o\?\.writeFilePaths\(a\)\},M=t=>\{l\.clipboard\.write\(\{text:t,html:t\}\)\};function w\(\)\{return\{plain:l\.clipboard\.readText\(\),html:l\.clipboard\.readHTML\(\)\}\}/g;
+  /let ([A-Za-z_$][\w$]*)=async\(t,a\)=>\{let n=await ([A-Za-z_$][\w$]*)\(a\);await \(0,s\.sleep\)\(100\);try\{t\?\.startDrag\(\{file:"",files:n,icon:l\.nativeImage\.createFromDataURL\(p\.default\)\}\)\}catch\(t\)\{b\.error\("setNativeFilesForDrag error",t\.message\)\}\},([A-Za-z_$][\w$]*)=async t=>\{let a=await \2\(t\);o\?\.writeFilePaths\(a\)\},([A-Za-z_$][\w$]*)=t=>\{l\.clipboard\.write\(\{text:t,html:t\}\)\};function ([A-Za-z_$][\w$]*)\(\)\{return\{plain:l\.clipboard\.readText\(\),html:l\.clipboard\.readHTML\(\)\}\}/g;
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN =
   /n\.isEmpty\(\)\?o\?\.writeFilePaths\(a\):l\.clipboard\.writeImage\(n\)/g;
 const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
@@ -354,6 +354,10 @@ const TAB_BUTTON_HEIGHT_STYLES =
   '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
 const TAB_BUTTON_HEIGHT_REPLACEMENT =
   '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
+const COLLAPSED_NAV_MIN_WIDTH_PATTERN =
+  /([A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.)V0(,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\))/g;
+const COLLAPSED_NAV_MIN_WIDTH_ALREADY_PATCHED_PATTERN =
+  /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/g;
 const COLLAPSED_NAV_PADDING_TOKEN_STYLES =
   '--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);';
 const COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT = '--nav-collapsed-padding:var(--spacing-1-5)0;';
@@ -466,14 +470,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'normalizedAudioPlayerFlacMimeType',
     description: 'normalized FLAC MIME type before renderer audio playback',
-    filePath: '172.js',
+    filePattern: /\.js$/,
+    replaceAll: true,
     search: `class o{audio;constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){const{audio:n}=this;function o(e){const o=document.createElement("source");return o.src=e,t&&(o.type=i(t)),new Promise((e=>{n.removeAttribute("src"),n.append(o),n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=Number.MAX_VALUE,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=null,n.onseeked=null,e()}}):e()},n.load()}))}if("blob:"===new URL(e).protocol)return o(e);try{const t=await fetch(e,{credentials:"include"}),n=await t.blob(),a=URL.createObjectURL(n);return await o(a)}catch{return await o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){const{audio:e}=this;for(;e.firstChild;){const{src:t}=e.firstChild;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return r[e]||e}`,
     replacementPrefix: `class o{constructor(){this.audio=new Audio}canPlayType(e){return this.audio.canPlayType(i(e))}async load(e,t){let n=this.audio,o=async e=>new Promise(r=>{let o=document.createElement("source");o.src=e,t&&(o.type=i(t)),n.removeAttribute("src"),n.append(o),n.onerror=r,n.onloadedmetadata=()=>{n.duration===1/0||a.vU?(n.currentTime=1/0,n.ontimeupdate=()=>{n.onseeked=()=>{n.currentTime=.001,n.ontimeupdate=n.onseeked=null,r()}}):r()},n.load()});if("blob:"===new URL(e).protocol)return o(e);try{let t=await fetch(e,{credentials:"include"}),n=URL.createObjectURL(await t.blob());return await o(n)}catch{return o(e)}}play(){return this.audio.play()}pause(){return this.audio.pause()}stop(){let e=this.audio;for(;e.firstChild;){let t=e.firstChild.src;t&&t.startsWith("blob:")&&URL.revokeObjectURL(t),e.firstChild.remove()}e.src="",e.pause()}get duration(){return this.audio.duration}get paused(){return this.audio.paused}get currentTime(){return this.audio.currentTime}set currentTime(e){this.audio.currentTime=e}set onerror(e){this.audio.onerror=e}get error(){return this.audio.error}}const r={"audio/m4a":"audio/mp4","video/quicktime":"video/mp4"};function i(e){return /^audio\\/x-flac\\b/i.test(e)?"audio/flac":r[e]||e}`,
   },
   {
     resultKey: 'disabledAiCopilotComposerDisclaimer',
     description: 'disabled AI Assistant composer disclaimer',
-    filePattern: /^172\.js$/,
+    filePattern: /\.js$/,
     pattern: /disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/g,
     replacementForMatch: (match) => sameLengthReplacement(match, 'disclaimer:void 0'),
     alreadyPatchedPattern: /disclaimer:void 0/g,
@@ -630,17 +635,19 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'visibleMultiSelectFloatingMenu',
     description: 'made multi-select floating menu visible on black theme',
-    filePath: '8634.js',
+    filePattern: /\.js$/,
     search: MULTI_SELECT_FLOATING_MENU_STYLES,
     replacementPrefix: MULTI_SELECT_FLOATING_MENU_REPLACEMENT,
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'hiddenNoteDetailFrameLine',
     description: 'hid note detail frame line between notes list and editor',
-    filePath: '8078.js',
+    filePattern: /\.js$/,
     search: NOTE_DETAIL_FRAME_SHADOW_STYLES,
     replacementPrefix: NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT,
+    replaceAll: true,
     isThematic: true,
   },
   {
@@ -649,10 +656,18 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       'copied image resources as native image clipboard data because image copy does not work on Linux without it',
     filePattern: /^main\.js$/,
     pattern: NATIVE_IMAGE_RESOURCE_CLIPBOARD_PATTERN,
-    replacementForMatch: (match, _filePath, dragFunctionName, tempFileFunctionName) =>
+    replacementForMatch: (
+      match,
+      _filePath,
+      dragFunctionName,
+      tempFileFunctionName,
+      copyFunctionName,
+      textFunctionName,
+      readFunctionName,
+    ) =>
       sameLengthReplacement(
         match,
-        `let ${dragFunctionName}=async(t,a)=>{let n=await ${tempFileFunctionName}(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},N=async t=>{let a=await ${tempFileFunctionName}(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},M=t=>l.clipboard.write({text:t,html:t});function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}`,
+        `let ${dragFunctionName}=async(t,a)=>{let n=await ${tempFileFunctionName}(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},${copyFunctionName}=async t=>{let a=await ${tempFileFunctionName}(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},${textFunctionName}=t=>l.clipboard.write({text:t,html:t});function ${readFunctionName}(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}`,
       ),
     alreadyPatchedPattern: NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
@@ -669,7 +684,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'nativeResourceDragFromBoron',
     description:
       'used native resource file dragging from the Boron editor because dragging does not work on Linux without it',
-    filePattern: /^8078\.js$/,
+    filePattern: /\.js$/,
     pattern: BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN,
     replacementForMatch: (match) =>
       sameLengthReplacement(match, BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT),
@@ -709,51 +724,58 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'minimizedCollapsedNavWidth',
     description: 'used minimum icon rail width for collapsed sidebar',
-    filePath: '8634.js',
-    search: 'Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)',
-    replacementPrefix: 'Q=Ia.WB,X=Math.max(Math.min(Ia.af,q),Q)',
+    filePattern: /\.js$/,
+    pattern: COLLAPSED_NAV_MIN_WIDTH_PATTERN,
+    replacementForMatch: (match) => match.replace('.V0,', '.WB,'),
+    alreadyPatchedPattern: COLLAPSED_NAV_MIN_WIDTH_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
     resultKey: 'expandedCollapsedNavPaddingToken',
     description:
       'increased collapsed sidebar icon rail vertical padding token and removed horizontal padding',
-    filePath: '2002.js',
+    filePattern: /\.js$/,
     search: COLLAPSED_NAV_PADDING_TOKEN_STYLES,
     replacementPrefix: COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT,
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'expandedCollapsedNavItemPadding',
     description:
       'increased collapsed sidebar icon rail item vertical padding and removed horizontal padding',
-    filePath: '2002.js',
+    filePattern: /\.js$/,
     search: COLLAPSED_NAV_ITEM_PADDING_STYLES,
     replacementPrefix: COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT,
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavCssWidth',
     description: 'halved collapsed sidebar CSS rail width token',
-    filePath: '2002.js',
+    filePattern: /\.js$/,
     search: '--nav-collapsed-width:60px;',
     replacementPrefix: '--nav-collapsed-width:30px;',
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavContainerWidth',
     description: 'halved collapsed sidebar active container width',
-    filePath: '2002.js',
+    filePattern: /\.js$/,
     search: 'width:60px;transition:width .2s ease-in-out',
     replacementPrefix: 'width:30px;transition:width .2s ease-in-out',
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'thinnedCollapsedNavWidthConstant',
     description: 'halved collapsed sidebar runtime rail width',
-    filePath: '8453.js',
+    filePattern: /\.js$/,
     search: 'd=60,c=96',
     replacementPrefix: 'd=30,c=96',
+    replaceAll: true,
     isThematic: true,
   },
   {

@@ -170,6 +170,36 @@ function walkAsarEntries(entry, callback, filePath = '') {
   }
 }
 
+function readMatchingAsarTexts(asarPath, filePredicate) {
+  const parsedAsar = parseAsarHeader(asarPath);
+  const matches = [];
+
+  walkAsarEntries(parsedAsar.header, (filePath, entry) => {
+    if (entry.unpacked || !filePredicate(filePath)) {
+      return;
+    }
+
+    matches.push({
+      filePath,
+      text: readAsarEntryText(asarPath, parsedAsar, filePath, entry),
+    });
+  });
+
+  return matches;
+}
+
+function topLevelJavaScriptEntries(asarPath) {
+  return readMatchingAsarTexts(asarPath, (filePath) => /^[^/]+\.js$/.test(filePath));
+}
+
+function matchingTextFiles(files, patternOrText) {
+  return files
+    .filter(({ text }) =>
+      typeof patternOrText === 'string' ? text.includes(patternOrText) : patternOrText.test(text),
+    )
+    .map(({ filePath }) => filePath);
+}
+
 function listFiles(dir) {
   if (!fs.existsSync(dir)) {
     return [];
@@ -281,39 +311,50 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
   const checkedFiles = [];
   const requiredFiles = [
     'main.js',
-    '172.js',
     '7839.js',
     '4701.js',
     '3645.js',
-    '8078.js',
-    '8634.js',
-    '2002.js',
-    '8453.js',
     '3014.js',
+    'boronTabShell.js',
     'node_modules/en-conduit-electron/dist/MainResourceProxy.js',
   ];
   const syntaxCheckPatterns = [
     /^main\.js$/,
-    /^172\.js$/,
     /^7839\.js$/,
     /^3645\.js$/,
-    /^8078\.js$/,
-    /^8634\.js$/,
-    /^2002\.js$/,
-    /^8453\.js$/,
     /^3014\.js$/,
     /^4701\.js$/,
+    /^boronTabShell\.js$/,
     /^ce\/chunks\/9008\.[^/]+\.js$/,
     /^node_modules\/@evernote\/common-editor\/chunks\/9008\.[^/]+\.js$/,
     /^node_modules\/en-conduit-electron\/dist\/MainResourceProxy\.js$/,
   ];
+  const patchedMarkers = [
+    String.raw`/^audio\/x-flac\b/i.test(e)?"audio/flac":r[e]||e`,
+    'disclaimer:void 0',
+    'background-color:#1f1f1f',
+    'box-shadow:0 0 0 1px #444,0 8px 24px #000;background:#1f1f1f;',
+    'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;',
+    '--nav-collapsed-padding:var(--spacing-1-5)0;',
+    '--nav-collapsed-width:30px;',
+    'width:30px;transition:width .2s ease-in-out',
+    'd=30,c=96',
+  ];
 
   walkAsarEntries(parsedAsar.header, (filePath, entry) => {
-    if (!syntaxCheckPatterns.some((pattern) => pattern.test(filePath))) {
+    if (entry.unpacked || !filePath.endsWith('.js')) {
       return;
     }
 
-    assertJavaScriptSyntax(filePath, readAsarEntryText(asarPath, parsedAsar, filePath, entry));
+    const text = readAsarEntryText(asarPath, parsedAsar, filePath, entry);
+    if (
+      !syntaxCheckPatterns.some((pattern) => pattern.test(filePath)) &&
+      !patchedMarkers.some((marker) => text.includes(marker))
+    ) {
+      return;
+    }
+
+    assertJavaScriptSyntax(filePath, text);
     checkedFiles.push(filePath);
   });
 
@@ -371,7 +412,11 @@ function verifyFlacMimePatch(asarPath) {
   if (!resourceProxyJs.includes(cachedResourceMarker)) {
     throw new Error('Missing FLAC MIME normalization when serving cached resources.');
   }
-  if (!readAsarText(asarPath, '172.js').includes(audioPlayerMarker)) {
+  const audioPlayerFiles = matchingTextFiles(
+    topLevelJavaScriptEntries(asarPath),
+    audioPlayerMarker,
+  );
+  if (audioPlayerFiles.length === 0) {
     throw new Error('Missing FLAC MIME normalization before renderer audio playback.');
   }
 
@@ -381,11 +426,14 @@ function verifyFlacMimePatch(asarPath) {
 }
 
 function verifyAiCopilotDisclaimerPatch(asarPath) {
-  const aiCopilotRuntime = readAsarText(asarPath, '172.js');
-  if (/disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/.test(aiCopilotRuntime)) {
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const staleFiles = matchingTextFiles(runtimeEntries, /disclaimer:\{text:[A-Za-z_$][\w$]*\(\)\}/);
+  const patchedFiles = matchingTextFiles(runtimeEntries, 'disclaimer:void 0');
+
+  if (staleFiles.length > 0) {
     throw new Error('Unpatched AI Assistant composer disclaimer config remains.');
   }
-  if (!aiCopilotRuntime.includes('disclaimer:void 0')) {
+  if (patchedFiles.length === 0) {
     throw new Error('Missing disabled AI Assistant composer disclaimer marker.');
   }
 
@@ -698,7 +746,11 @@ function verifyDropdownItemHoverPatch(asarPath) {
   if (dropdownStyleFiles.length < 1) {
     throw new Error('DropdownItem stylesheet marker is missing.');
   }
-  if (!readAsarText(asarPath, '172.js').includes('Action.note.openInLiteEditor')) {
+  const noteActionFiles = matchingTextFiles(
+    topLevelJavaScriptEntries(asarPath),
+    'Action.note.openInLiteEditor',
+  );
+  if (noteActionFiles.length < 1) {
     throw new Error('Note actions dropdown marker is missing.');
   }
 
@@ -754,16 +806,18 @@ function verifySourceUrlPillWidthPatch(asarPath) {
 }
 
 function verifyMultiSelectFloatingMenuPatch(asarPath) {
-  const runtime = readAsarText(asarPath, '8634.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const stalePattern =
     /\.cSX4Fc7FHQb632Sg\{[^}]*background:var\(--color-surface-fill-secondarybrand-enabled\)[^}]*\}\.UBpdhKOC1XkODEHP\{[^}]*color:var\(--color-text-fill-inverted-enabled\)/;
   const patchedPattern =
     /\.cSX4Fc7FHQb632Sg\{[^}]*box-shadow:0 0 0 1px #444,0 8px 24px #000;[^}]*background:#1f1f1f;[^}]*\}\.UBpdhKOC1XkODEHP\{[^}]*color:#fff;[^}]*\}\.smD3K8Nh5kcQyNGr\{[^}]*\}\._BcxFGjeF0UUj5Z_\{[^}]*\}\.smD3K8Nh5kcQyNGr,\.smD3K8Nh5kcQyNGr \*\{color:#fff!important;fill:#fff!important;stroke:#fff!important\}\.a9h8bbz8LYMfS910\{background-color:#555;/;
+  const staleFiles = matchingTextFiles(runtimeEntries, stalePattern);
+  const patchedFiles = matchingTextFiles(runtimeEntries, patchedPattern);
 
-  if (stalePattern.test(runtime)) {
+  if (staleFiles.length > 0) {
     throw new Error('Unpatched multi-select floating menu contrast remains.');
   }
-  if (!patchedPattern.test(runtime)) {
+  if (patchedFiles.length === 0) {
     throw new Error('Missing visible multi-select floating menu marker.');
   }
 
@@ -771,16 +825,18 @@ function verifyMultiSelectFloatingMenuPatch(asarPath) {
 }
 
 function verifyNoteDetailFrameLinePatch(asarPath) {
-  const runtime = readAsarText(asarPath, '8078.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const staleMarker =
     'box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
   const patchedMarker =
     'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
+  const staleFiles = matchingTextFiles(runtimeEntries, staleMarker);
+  const patchedFiles = matchingTextFiles(runtimeEntries, patchedMarker);
 
-  if (runtime.includes(staleMarker)) {
+  if (staleFiles.length > 0) {
     throw new Error('Unpatched note detail frame line between notes list and editor remains.');
   }
-  if (!runtime.includes(patchedMarker)) {
+  if (patchedFiles.length === 0) {
     throw new Error('Missing hidden note detail frame line marker.');
   }
 
@@ -789,22 +845,23 @@ function verifyNoteDetailFrameLinePatch(asarPath) {
 
 function verifyNativeResourceDragPatch(asarPath) {
   const commonEditorRuntime = readAsarText(asarPath, '3645.js');
-  const boronRuntime = readAsarText(asarPath, '8078.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
 
   if (commonEditorRuntime.includes('(0,F.Ld)()&&x.Z.isMac')) {
     throw new Error('Common editor resource drag still uses macOS-only native drag.');
   }
-  if (boronRuntime.includes('if(e.isBoron&&n.boronEnv.isMac)')) {
+  const staleBoronFiles = matchingTextFiles(runtimeEntries, 'if(e.isBoron&&n.boronEnv.isMac)');
+  if (staleBoronFiles.length > 0) {
     throw new Error('Boron resource drag still uses macOS-only native drag.');
   }
   if (!commonEditorRuntime.includes('if((0,F.Ld)())n.preventDefault(),(0,U.HH)')) {
     throw new Error('Missing native common editor resource drag marker.');
   }
-  if (
-    !boronRuntime.includes(
-      'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag"',
-    )
-  ) {
+  const patchedBoronFiles = matchingTextFiles(
+    runtimeEntries,
+    'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag"',
+  );
+  if (patchedBoronFiles.length === 0) {
     throw new Error('Missing native Boron resource drag marker.');
   }
 
@@ -846,11 +903,18 @@ function verifyTabButtonHitTargetPatch(asarPath) {
 }
 
 function verifyCollapsedNavWidthPatch(asarPath) {
-  const navRuntime = readAsarText(asarPath, '8634.js');
-  if (navRuntime.includes('Q=Ia.V0,X=Math.max(Math.min(Ia.af,q),Q)')) {
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const stalePattern =
+    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.V0,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/;
+  const patchedPattern =
+    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/;
+  const staleFiles = matchingTextFiles(runtimeEntries, stalePattern);
+  const patchedFiles = matchingTextFiles(runtimeEntries, patchedPattern);
+
+  if (staleFiles.length > 0) {
     throw new Error('Unpatched collapsed sidebar width remains.');
   }
-  if (!navRuntime.includes('Q=Ia.WB,X=Math.max(Math.min(Ia.af,q),Q)')) {
+  if (patchedFiles.length === 0) {
     throw new Error('Missing minimized collapsed sidebar width marker.');
   }
 
@@ -858,7 +922,7 @@ function verifyCollapsedNavWidthPatch(asarPath) {
 }
 
 function verifyCollapsedNavSpacingPatch(asarPath) {
-  const navStylesRuntime = readAsarText(asarPath, '2002.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const oldPaddingToken = '--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);';
   const intermediatePaddingToken = '--nav-collapsed-padding:var(--spacing-1-5)var(--spacing-2);';
   const newPaddingToken = '--nav-collapsed-padding:var(--spacing-1-5)0;';
@@ -866,16 +930,22 @@ function verifyCollapsedNavSpacingPatch(asarPath) {
   const intermediateItemPadding =
     'padding:var(--spacing-1-5)var(--spacing-2);justify-content:center;';
   const newItemPadding = 'padding:var(--spacing-1-5)0;justify-content:center;';
+  const staleFiles = matchingTextFiles(
+    runtimeEntries,
+    new RegExp(
+      [oldPaddingToken, intermediatePaddingToken, oldItemPadding, intermediateItemPadding]
+        .map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|'),
+    ),
+  );
 
-  if (
-    navStylesRuntime.includes(oldPaddingToken) ||
-    navStylesRuntime.includes(intermediatePaddingToken) ||
-    navStylesRuntime.includes(oldItemPadding) ||
-    navStylesRuntime.includes(intermediateItemPadding)
-  ) {
+  if (staleFiles.length > 0) {
     throw new Error('Unpatched collapsed sidebar icon spacing remains.');
   }
-  if (!navStylesRuntime.includes(newPaddingToken) || !navStylesRuntime.includes(newItemPadding)) {
+  if (
+    matchingTextFiles(runtimeEntries, newPaddingToken).length === 0 ||
+    matchingTextFiles(runtimeEntries, newItemPadding).length === 0
+  ) {
     throw new Error('Missing increased collapsed sidebar icon spacing marker.');
   }
 
@@ -883,27 +953,26 @@ function verifyCollapsedNavSpacingPatch(asarPath) {
 }
 
 function verifyCollapsedNavThinWidthPatch(asarPath) {
-  const navStylesRuntime = readAsarText(asarPath, '2002.js');
-  const navConstantsRuntime = readAsarText(asarPath, '8453.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const oldCompiledContainerWidth = 'width:60px;transition:width .2s ease-in-out';
   const newCompiledContainerWidth = 'width:30px;transition:width .2s ease-in-out';
 
-  if (navStylesRuntime.includes('--nav-collapsed-width:60px;')) {
+  if (matchingTextFiles(runtimeEntries, '--nav-collapsed-width:60px;').length > 0) {
     throw new Error('Unpatched collapsed sidebar CSS rail width remains.');
   }
-  if (!navStylesRuntime.includes('--nav-collapsed-width:30px;')) {
+  if (matchingTextFiles(runtimeEntries, '--nav-collapsed-width:30px;').length === 0) {
     throw new Error('Missing halved collapsed sidebar CSS rail width marker.');
   }
-  if (navStylesRuntime.includes(oldCompiledContainerWidth)) {
+  if (matchingTextFiles(runtimeEntries, oldCompiledContainerWidth).length > 0) {
     throw new Error('Unpatched collapsed sidebar active container width remains.');
   }
-  if (!navStylesRuntime.includes(newCompiledContainerWidth)) {
+  if (matchingTextFiles(runtimeEntries, newCompiledContainerWidth).length === 0) {
     throw new Error('Missing halved collapsed sidebar active container width marker.');
   }
-  if (navConstantsRuntime.includes('d=60,c=96')) {
+  if (matchingTextFiles(runtimeEntries, 'd=60,c=96').length > 0) {
     throw new Error('Unpatched collapsed sidebar runtime rail width remains.');
   }
-  if (!navConstantsRuntime.includes('d=30,c=96')) {
+  if (matchingTextFiles(runtimeEntries, 'd=30,c=96').length === 0) {
     throw new Error('Missing halved collapsed sidebar runtime rail width marker.');
   }
 
