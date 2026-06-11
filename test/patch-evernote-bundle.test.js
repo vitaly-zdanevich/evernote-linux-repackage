@@ -231,6 +231,15 @@ function makePatchableDropdownItemChunkJs() {
   ].join('');
 }
 
+function makePatchableSearchDropdownItemChunkJs() {
+  return [
+    '(()=>{',
+    'const css=".U1xedhQgLIIyQkOT{width:100%;display:flex}.U1xedhQgLIIyQkOT:hover{cursor:pointer}.brw4jmU4lkxuTAYR{background-color:var(--color-surface-fill-primary-hover)}";',
+    'void css;',
+    '})();',
+  ].join('');
+}
+
 function makePatchableSourceUrlPillChunkJs() {
   const css = [
     '.SiiOu{align-items:center;background-color:var(--color-filterpill-base-fill-default);border:2px solid transparent;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;font-weight:400;max-width:375px;padding:0 6px;text-align:center}',
@@ -317,6 +326,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '9505.js': makePatchableTagSuggestionChunkJs(),
       '3645.js': makePatchableCommonEditorDragChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
+      '9911.js': makePatchableSearchDropdownItemChunkJs(),
       '8634.js': makePatchableMainNavChunkJs(),
       'boronTabShell.js': makePatchableTabShellJs(),
       '2002.js': makePatchableNavStylesChunkJs(),
@@ -547,6 +557,16 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       /\.dropItem:hover\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
     );
     assert.doesNotThrow(() => new Function(patchedDropdownItemChunkJs));
+    const patchedSearchDropdownItemChunkJs = readMinimalAsarEntry(asarPath, '9911.js');
+    assert.match(
+      patchedSearchDropdownItemChunkJs,
+      /\.U1xedhQgLIIyQkOT:hover,.brw4jmU4lkxuTAYR\{background-color:#1f1f1f\s*\}/,
+    );
+    assert.doesNotMatch(
+      patchedSearchDropdownItemChunkJs,
+      /\.brw4jmU4lkxuTAYR\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
+    );
+    assert.doesNotThrow(() => new Function(patchedSearchDropdownItemChunkJs));
     const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, '4701.js');
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 6px/);
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 5px 0 2px/);

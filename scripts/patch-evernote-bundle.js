@@ -308,6 +308,10 @@ const DROPDOWN_ITEM_HOVER_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/g;
 const DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:#1f1f1f\s*\}\1:active\{scale:\.99\}/g;
+const SEARCH_DROPDOWN_ITEM_SELECTED_BACKGROUND_STYLES =
+  '.brw4jmU4lkxuTAYR{background-color:var(--color-surface-fill-primary-hover)}';
+const SEARCH_DROPDOWN_ITEM_HOVER_BACKGROUND_REPLACEMENT =
+  '.U1xedhQgLIIyQkOT:hover,.brw4jmU4lkxuTAYR{background-color:#1f1f1f}';
 const SOURCE_URL_PILL_WIDTH_FILE_PATTERN =
   /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
 const SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_PATTERN =
@@ -616,6 +620,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       ),
     alreadyPatchedPattern: DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'visibleSearchDropdownItemHover',
+    description: 'made search result item hover background visible on black theme',
+    filePattern: /\.js$/,
+    search: SEARCH_DROPDOWN_ITEM_SELECTED_BACKGROUND_STYLES,
+    replacementPrefix: SEARCH_DROPDOWN_ITEM_HOVER_BACKGROUND_REPLACEMENT,
+    replaceAll: true,
     isThematic: true,
   },
   {

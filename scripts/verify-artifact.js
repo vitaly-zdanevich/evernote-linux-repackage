@@ -333,6 +333,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     String.raw`/^audio\/x-flac\b/i.test(e)?"audio/flac":r[e]||e`,
     'disclaimer:void 0',
     'background-color:#1f1f1f',
+    '.U1xedhQgLIIyQkOT:hover,.brw4jmU4lkxuTAYR{background-color:#1f1f1f}',
     'box-shadow:0 0 0 1px #444,0 8px 24px #000;background:#1f1f1f;',
     'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;',
     '--nav-collapsed-padding:var(--spacing-1-5)0;',
@@ -792,6 +793,23 @@ function verifyDropdownItemHoverPatch(asarPath) {
   process.stdout.write('Verified dropdown menu item hover background is visible on black theme.\n');
 }
 
+function verifySearchDropdownItemHoverPatch(asarPath) {
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const staleMarker = '.brw4jmU4lkxuTAYR{background-color:var(--color-surface-fill-primary-hover)}';
+  const patchedMarker = '.U1xedhQgLIIyQkOT:hover,.brw4jmU4lkxuTAYR{background-color:#1f1f1f}';
+  const staleFiles = matchingTextFiles(runtimeEntries, staleMarker);
+  const patchedFiles = matchingTextFiles(runtimeEntries, patchedMarker);
+
+  if (staleFiles.length > 0) {
+    throw new Error('Unpatched search result item selected-only background remains.');
+  }
+  if (patchedFiles.length === 0) {
+    throw new Error('Missing visible search result item hover background marker.');
+  }
+
+  process.stdout.write('Verified search result item hover background is visible on black theme.\n');
+}
+
 function verifySourceUrlPillWidthPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const sourceUrlFilePattern =
@@ -1060,6 +1078,7 @@ function verifyArtifact(options) {
     verifyEditorNoteLayoutPatch(asarPath);
     verifyTagSuggestionHoverPatch(asarPath);
     verifyDropdownItemHoverPatch(asarPath);
+    verifySearchDropdownItemHoverPatch(asarPath);
     verifySourceUrlPillWidthPatch(asarPath);
     verifyMultiSelectFloatingMenuPatch(asarPath);
     verifyNoteDetailFrameLinePatch(asarPath);
