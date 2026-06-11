@@ -36,6 +36,7 @@ This project runs Evernote's desktop client code. Compared with Evernote Web, it
 - Sync folders. The desktop app can watch local folders and automatically import files placed there. See [Sync your local folders](https://help.evernote.com/hc/en-us/articles/209004967-Sync-your-local-folders-former-Import-Folder-feature).
 - Desktop keyboard shortcuts. The desktop app has a full shortcut set. Evernote Web can be helped with a userscript such as [evernote/hotkey](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/hotkey), but this repackage uses the desktop shortcut surface. See [Keyboard shortcuts](https://help.evernote.com/hc/en-us/articles/34296687388307-Keyboard-shortcuts).
 - Right-click context menus. Desktop workflows use native-style context menus for actions such as export, encrypted text actions, shortcuts, and tab controls.
+- Clear Evernote window title. The app window is titled as Evernote itself, without a browser name in the title bar or task switcher.
 - Encrypted text workflow from the desktop context menu. This is not strictly desktop-only because Evernote Web also supports encrypting selected text with shortcuts, but the desktop app exposes the documented right-click workflow. Evernote only encrypts selected text, not whole notes or notebooks. See [Encrypt text in a note](https://help.evernote.com/hc/en-us/articles/209005547-Encrypt-text-in-a-note).
 - Black minimal theme integrated, similar to https://gitlab.com/vitaly-zdanevich-styles/evernote
 
