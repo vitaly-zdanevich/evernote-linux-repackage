@@ -339,6 +339,11 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     '--nav-collapsed-width:30px;',
     'width:30px;transition:width .2s ease-in-out',
     'd=30,c=96',
+    '[q,W]=ne.useState(Ua.WB)',
+    'W(z),(0,pe.b)(H.NAV_DRAWER_WIDTH,z),(0,pe.b)(H.IS_NAV_EXPANDED,!1)',
+    'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])',
+    'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])',
+    'onResize:e=>{W(z)}',
   ];
 
   walkAsarEntries(parsedAsar.header, (filePath, entry) => {
@@ -438,6 +443,36 @@ function verifyAiCopilotDisclaimerPatch(asarPath) {
   }
 
   process.stdout.write('Verified AI Assistant composer disclaimer is disabled.\n');
+}
+
+function verifyFrozenCollapsedSidebarPatch(asarPath) {
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const staleMarkers = [
+    'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i)',
+    'W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=Ua.g$)',
+    'we=(0,ne.useMemo)((()=>({width:Q?Ua.Dl:z,height:"100%"})),[Q])',
+    'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge])',
+    'onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}',
+  ];
+  const patchedMarkers = [
+    'Z=j-(Dv+Pi.B),[q,W]=ne.useState(Ua.WB)',
+    'W(z),(0,pe.b)(H.NAV_DRAWER_WIDTH,z),(0,pe.b)(H.IS_NAV_EXPANDED,!1)',
+    'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])',
+    'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])',
+    'onResize:e=>{W(z)}',
+  ];
+  const staleFiles = staleMarkers.flatMap((marker) => matchingTextFiles(runtimeEntries, marker));
+  const patchedFiles = patchedMarkers.map((marker) => matchingTextFiles(runtimeEntries, marker));
+
+  if (staleFiles.length > 0) {
+    throw new Error('Unpatched expanding left sidebar path remains.');
+  }
+  const missingMarkers = patchedMarkers.filter((_, index) => patchedFiles[index].length === 0);
+  if (missingMarkers.length > 0) {
+    throw new Error(`Missing frozen left sidebar marker(s): ${missingMarkers.join(', ')}`);
+  }
+
+  process.stdout.write('Verified left sidebar is frozen to the collapsed rail.\n');
 }
 
 function verifyBlackBackgroundThemePatch(asarPath) {
@@ -1034,6 +1069,7 @@ function verifyArtifact(options) {
     verifyCollapsedNavSpacingPatch(asarPath);
     verifyCollapsedNavThinWidthPatch(asarPath);
     verifyNoteSnippetSeparatorsPatch(asarPath);
+    verifyFrozenCollapsedSidebarPatch(asarPath);
   }
 
   verifyNativeResourceDragPatch(asarPath);

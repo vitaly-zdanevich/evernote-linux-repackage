@@ -346,6 +346,24 @@ const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT =
   'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
 const IMPORT_FOLDER_IGNORE_INITIAL_STYLES = 'ignoreInitial:!1';
 const IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT = 'ignoreInitial:!0';
+const FROZEN_NAV_INITIAL_WIDTH_STYLES =
+  'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.V0,G=';
+const FROZEN_NAV_INITIAL_WIDTH_REPLACEMENT =
+  'Z=j-(Dv+Pi.B),[q,W]=ne.useState(Ua.WB),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.WB,G=';
+const FROZEN_NAV_PERSIST_WIDTH_STYLES =
+  'le=(0,ne.useCallback)((e=>{l(q),W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=Ua.g$)}),[q])';
+const FROZEN_NAV_PERSIST_WIDTH_REPLACEMENT =
+  'le=(0,ne.useCallback)((e=>{l(q),W(z),(0,pe.b)(H.NAV_DRAWER_WIDTH,z),(0,pe.b)(H.IS_NAV_EXPANDED,!1)}),[q,z])';
+const FROZEN_NAV_VISIBLE_WIDTH_STYLES =
+  'we=(0,ne.useMemo)((()=>({width:Q?Ua.Dl:z,height:"100%"})),[Q])';
+const FROZEN_NAV_VISIBLE_WIDTH_REPLACEMENT =
+  'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])';
+const FROZEN_NAV_TOGGLE_STYLES =
+  'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge])';
+const FROZEN_NAV_TOGGLE_REPLACEMENT = 'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])';
+const FROZEN_NAV_RESIZE_STYLES =
+  'onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}';
+const FROZEN_NAV_RESIZE_REPLACEMENT = 'onResize:e=>{W(z)}';
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -704,6 +722,51 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePath: 'main.js',
     search: IMPORT_FOLDER_IGNORE_INITIAL_STYLES,
     replacementPrefix: IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT,
+  },
+  {
+    resultKey: 'frozenCollapsedSidebarInitialWidth',
+    description: 'started the left sidebar in collapsed width for the black theme',
+    filePattern: /\.js$/,
+    search: FROZEN_NAV_INITIAL_WIDTH_STYLES,
+    replacementPrefix: FROZEN_NAV_INITIAL_WIDTH_REPLACEMENT,
+    replaceAll: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'frozenCollapsedSidebarPersistedWidth',
+    description: 'persisted the left sidebar as collapsed for the black theme',
+    filePattern: /\.js$/,
+    search: FROZEN_NAV_PERSIST_WIDTH_STYLES,
+    replacementPrefix: FROZEN_NAV_PERSIST_WIDTH_REPLACEMENT,
+    replaceAll: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'frozenCollapsedSidebarVisibleWidth',
+    description: 'rendered the left sidebar at collapsed width for the black theme',
+    filePattern: /\.js$/,
+    search: FROZEN_NAV_VISIBLE_WIDTH_STYLES,
+    replacementPrefix: FROZEN_NAV_VISIBLE_WIDTH_REPLACEMENT,
+    replaceAll: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'frozenCollapsedSidebarToggle',
+    description: 'made left sidebar toggle keep the collapsed rail for the black theme',
+    filePattern: /\.js$/,
+    search: FROZEN_NAV_TOGGLE_STYLES,
+    replacementPrefix: FROZEN_NAV_TOGGLE_REPLACEMENT,
+    replaceAll: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'frozenCollapsedSidebarResize',
+    description: 'made left sidebar resize keep the collapsed rail for the black theme',
+    filePattern: /\.js$/,
+    search: FROZEN_NAV_RESIZE_STYLES,
+    replacementPrefix: FROZEN_NAV_RESIZE_REPLACEMENT,
+    replaceAll: true,
+    isThematic: true,
   },
   {
     resultKey: 'emphasizedActiveTabTitle',

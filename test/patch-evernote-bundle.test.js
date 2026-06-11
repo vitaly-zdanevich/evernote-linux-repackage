@@ -289,6 +289,19 @@ function makePatchableNoteListStylesChunkJs() {
   ].join('');
 }
 
+function makePatchableFrozenNavChunkJs() {
+  return [
+    'function frozenNav(){',
+    'let Z,j,Dv,Pi,q,W,K,la,V,Ua,G,i,ne,l,pe,H,Q,z,we,ke,de,le,ge,me;',
+    'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.V0,G=Math.max(Math.min(Ua.af,Z),z);',
+    'le=(0,ne.useCallback)((e=>{l(q),W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=Ua.g$)}),[q]);',
+    'we=(0,ne.useMemo)((()=>({width:Q?Ua.Dl:z,height:"100%"})),[Q]);',
+    'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge]);',
+    'return {onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}};',
+    '}',
+  ].join('');
+}
+
 test('patchEvernoteBundle applies Linux port patches in-place', () => {
   const tempDir = makeTempDir();
   try {
@@ -309,6 +322,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '2002.js': makePatchableNavStylesChunkJs(),
       '8453.js': makePatchableNavConstantsChunkJs(),
       '3014.js': makePatchableNoteListStylesChunkJs(),
+      '4932.js': makePatchableFrozenNavChunkJs(),
       '3407.js': makePatchableEditorNoteLayoutJs({ swappedNames: true }),
       'ce/ce-test.js': makePatchableEditorNoteLayoutJs(),
       'node_modules/@evernote/common-editor/ce.js': makePatchableEditorNoteLayoutJs(),
@@ -608,6 +622,30 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       /--noteSnippet-border-bottom:1px solid var\(--color-snippet-base-stroke-enabled\);/,
     );
     assert.doesNotThrow(() => new Function(patchedNoteListStylesChunkJs));
+    const patchedFrozenNavChunkJs = readMinimalAsarEntry(asarPath, '4932.js');
+    assert.match(patchedFrozenNavChunkJs, /\[q,W\]=ne\.useState\(Ua\.WB\)/);
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /W\(z\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,z\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,
+    );
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /we=\(0,ne\.useMemo\)\(\(\(\)=>\(\{width:z,height:"100%"\}\)\),\[z\]\)/,
+    );
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /ke=\(0,ne\.useCallback\)\(\(\(\)=>\{le\(z\)\}\),\[le,z\]\)/,
+    );
+    assert.match(patchedFrozenNavChunkJs, /onResize:e=>\{W\(z\)\}/);
+    assert.doesNotMatch(patchedFrozenNavChunkJs, /\[q,W\]=\(0,ne\.useState\)\(i\)/);
+    assert.doesNotMatch(
+      patchedFrozenNavChunkJs,
+      /W\(e\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,e\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,e>=Ua\.g\$\)/,
+    );
+    assert.doesNotMatch(patchedFrozenNavChunkJs, /width:Q\?Ua\.Dl:z/);
+    assert.doesNotMatch(patchedFrozenNavChunkJs, /Q\?\(de\(\),le\(Ua\.Dl\)\):ge\(\)/);
+    assert.doesNotMatch(patchedFrozenNavChunkJs, /W\(me\(t\)\)/);
+    assert.doesNotThrow(() => new Function(patchedFrozenNavChunkJs));
 
     const secondPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {
