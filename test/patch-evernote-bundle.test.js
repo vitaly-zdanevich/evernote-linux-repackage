@@ -309,6 +309,9 @@ function makePatchableNoteListStylesChunkJs() {
 
 function makePatchableFrozenNavChunkJs() {
   return [
+    '"use strict";',
+    '!function(){try{var e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{},n=(new Error).stack;n&&(e._sentryDebugIds=e._sentryDebugIds||{},e._sentryDebugIds[n]="b94b73cd-f9fa-5aca-9a42-6aaf766b6a21")}catch(e){}}();',
+    'const ka="qa-NAV_ALL_NOTES";',
     'function frozenNav(){',
     'let Z,j,Dv,Pi,q,W,K,la,V,Ua,G,i,ne,l,pe,H,Q,z,we,ke,de,le,ge,me;',
     'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.V0,G=Math.max(Math.min(Ua.af,Z),z);',
@@ -317,6 +320,7 @@ function makePatchableFrozenNavChunkJs() {
     'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge]);',
     'return {onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}};',
     '}',
+    'function collapsedAllNotes(){return (0,a.jsx)(ua.u,{disabled:n,label:at.ag.t("AllNotes.label"),placement:"right",children:(0,a.jsxs)("a",{ref:s,id:Ya.bMj,"data-asloc":Ua.YZ.Notes,className:"x"})})}',
   ].join('');
 }
 
@@ -719,6 +723,20 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotThrow(() => new Function(patchedNoteListStylesChunkJs));
     const patchedFrozenNavChunkJs = readMinimalAsarEntry(asarPath, '4932.js');
     assert.match(patchedFrozenNavChunkJs, /\[q,W\]=ne\.useState\(Ua\.WB\)/);
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /label:at\.ag\.t\("AllNotes\.label"\)\+" \(F4\)",placement:"right"/,
+    );
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /"F4"==e\.key&&!\(e\.altKey\|\|e\.ctrlKey\|\|e\.metaKey\|\|e\.shiftKey\)/,
+    );
+    assert.match(
+      patchedFrozenNavChunkJs,
+      /document\.querySelector\("#qa-NAV_ALL_NOTES,#qa-NAV_ALL_NOTES_NOTES_COUNT"\)/,
+    );
+    assert.match(patchedFrozenNavChunkJs, /\(t\.closest\("a"\)\|\|t\)\.click\(\)/);
+    assert.doesNotMatch(patchedFrozenNavChunkJs, /"data-asloc":Ua\.YZ\.Notes/);
     assert.match(
       patchedFrozenNavChunkJs,
       /W\(z\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,z\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,

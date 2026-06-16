@@ -345,6 +345,7 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
     'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])',
     'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])',
     'onResize:e=>{W(z)}',
+    'document.querySelector("#qa-NAV_ALL_NOTES,#qa-NAV_ALL_NOTES_NOTES_COUNT")',
   ];
 
   walkAsarEntries(parsedAsar.header, (filePath, entry) => {
@@ -444,6 +445,41 @@ function verifyAiCopilotDisclaimerPatch(asarPath) {
   }
 
   process.stdout.write('Verified AI Assistant composer disclaimer is disabled.\n');
+}
+
+function verifyF4NotesHotkeyPatch(asarPath) {
+  const mainJs = readAsarText(asarPath, 'main.js');
+  const shortcutMarker = '"F4"==e.key&&!(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)';
+  const selectorMarker =
+    'document.querySelector("#qa-NAV_ALL_NOTES,#qa-NAV_ALL_NOTES_NOTES_COUNT")';
+  const clickMarker = '(t.closest("a")||t).click()';
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const tooltipMarker = 'label:at.ag.t("AllNotes.label")+" (F4)"';
+  const staleTooltipPattern =
+    /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,[A-Za-z_$][\w$]*\.jsxs\)\("a",\{ref:[A-Za-z_$][\w$]*,id:[A-Za-z_$][\w$]*\.bMj,"data-asloc":[A-Za-z_$][\w$]*\.YZ\.Notes,/;
+  const hotkeyFiles = runtimeEntries.filter(({ text }) =>
+    [shortcutMarker, selectorMarker, clickMarker].every((marker) => text.includes(marker)),
+  );
+  const tooltipFiles = matchingTextFiles(runtimeEntries, tooltipMarker);
+  const staleTooltipFiles = matchingTextFiles(runtimeEntries, staleTooltipPattern);
+
+  if (mainJs.includes(selectorMarker)) {
+    throw new Error('F4 Notes browser hotkey was injected into main.js.');
+  }
+  if (hotkeyFiles.length === 0) {
+    throw new Error('Missing F4 Notes hotkey marker in sidebar runtime chunk.');
+  }
+  if (tooltipFiles.length === 0) {
+    throw new Error('Missing collapsed Notes tooltip F4 marker.');
+  }
+  if (staleTooltipFiles.length > 0) {
+    throw new Error('Unpatched collapsed Notes tooltip remains.');
+  }
+
+  for (const { filePath, text } of hotkeyFiles) {
+    assertJavaScriptSyntax(filePath, text);
+  }
+  process.stdout.write('Verified F4 Notes shortcut and tooltip marker.\n');
 }
 
 function verifyFrozenCollapsedSidebarPatch(asarPath) {
@@ -1172,6 +1208,7 @@ function verifyArtifact(options) {
   verifyPatchedJavaScriptSyntax(asarPath);
   verifyFlacMimePatch(asarPath);
   verifyAiCopilotDisclaimerPatch(asarPath);
+  verifyF4NotesHotkeyPatch(asarPath);
 
   if (blackTheme) {
     verifyBlackBackgroundThemePatch(asarPath);

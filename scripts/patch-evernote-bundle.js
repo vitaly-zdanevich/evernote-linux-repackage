@@ -403,6 +403,27 @@ const COLLAPSED_NAV_ITEM_PADDING_STYLES =
   'padding:var(--spacing-0-5)var(--spacing-2);justify-content:center;';
 const COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT =
   'padding:var(--spacing-1-5)0;justify-content:center;';
+const SENTRY_DEBUG_ID_PREAMBLE_PATTERN =
+  /^(\s*)!function\(\)\{try\{var e="undefined"!=typeof window\?window:"undefined"!=typeof global\?global:"undefined"!=typeof self\?self:\{\},n=\(new Error\)\.stack;n&&\(e\._sentryDebugIds=e\._sentryDebugIds\|\|\{\},e\._sentryDebugIds\[n\]="[0-9a-f-]+"\)\}catch\(e\)\{\}\}\(\);/g;
+const F4_NOTES_HOTKEY_REPLACEMENT =
+  '!function(){addEventListener("keydown",e=>{if("F4"==e.key&&!(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey)){let t=document.querySelector("#qa-NAV_ALL_NOTES,#qa-NAV_ALL_NOTES_NOTES_COUNT");t&&(e.preventDefault(),(t.closest("a")||t).click())}},1)}();';
+const F4_NOTES_HOTKEY_ALREADY_PATCHED_PATTERN =
+  /addEventListener\("keydown",[^"]+"F4"==[A-Za-z_$][\w$]*\.key/g;
+const COLLAPSED_NOTES_TOOLTIP_PATTERN =
+  /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,a\.jsxs\)\("a",\{ref:([A-Za-z_$][\w$]*),id:Ya\.bMj,"data-asloc":Ua\.YZ\.Notes,/g;
+const COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN =
+  /label:at\.ag\.t\("AllNotes\.label"\)\+" \(F4\)"/g;
+
+function notesSidebarChunkPreambleRange(text) {
+  if (!text.includes('AllNotes.label') || !text.includes('qa-NAV_ALL_NOTES')) {
+    return { start: 0, end: 0 };
+  }
+
+  const strictPrefix = '"use strict";';
+  const strictIndex = text.startsWith(strictPrefix) ? strictPrefix.length : 0;
+  const start = strictIndex + (/^\s/.test(text.slice(strictIndex, strictIndex + 1)) ? 1 : 0);
+  return { start, end: Math.min(text.length, start + 512) };
+}
 
 const patches = [
   {
@@ -897,6 +918,30 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     replacementPrefix: COLLAPSED_NAV_ITEM_PADDING_REPLACEMENT,
     replaceAll: true,
     isThematic: true,
+  },
+  {
+    resultKey: 'addedF4NotesHotkey',
+    description: 'added F4 shortcut for the Notes sidebar button',
+    filePattern: /^\d+\.js$/,
+    pattern: SENTRY_DEBUG_ID_PREAMBLE_PATTERN,
+    replacementForMatch: (match, _filePath, leadingWhitespace) =>
+      sameLengthReplacement(match, `${leadingWhitespace}${F4_NOTES_HOTKEY_REPLACEMENT}`),
+    alreadyPatchedPattern: F4_NOTES_HOTKEY_ALREADY_PATCHED_PATTERN,
+    textRangeForPattern: notesSidebarChunkPreambleRange,
+    replacePattern: true,
+  },
+  {
+    resultKey: 'labeledNotesTooltipWithF4',
+    description: 'labeled collapsed Notes sidebar tooltip with F4 shortcut',
+    filePattern: /\.js$/,
+    pattern: COLLAPSED_NOTES_TOOLTIP_PATTERN,
+    replacementForMatch: (match, _filePath, refName) =>
+      sameLengthReplacement(
+        match,
+        `label:at.ag.t("AllNotes.label")+" (F4)",placement:"right",children:(0,a.jsxs)("a",{ref:${refName},id:Ya.bMj,`,
+      ),
+    alreadyPatchedPattern: COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: 'thinnedCollapsedNavCssWidth',
