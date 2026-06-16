@@ -324,6 +324,10 @@ const ACTIVE_FILTER_PILL_ICON_COLOR_PATTERN =
   /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:var\(--color-filterpill-icons-fill-active\)\}/g;
 const ACTIVE_FILTER_PILL_ICON_COLOR_ALREADY_PATCHED_PATTERN =
   /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:#fff\s*\}/g;
+const ACTIVE_FILTER_PILL_CLOSE_ICON_COLOR_PATTERN =
+  /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+(?::hover)?\{color:var\(--color-filterpill-closeicon-fill-active(?:hover)?\)\}/g;
+const ACTIVE_FILTER_PILL_CLOSE_ICON_COLOR_ALREADY_PATCHED_PATTERN =
+  /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+(?::hover)?\{color:#000\s*\}/g;
 const SOURCE_URL_PILL_WIDTH_FILE_PATTERN =
   /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
 const SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_PATTERN =
@@ -682,6 +686,19 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
         sameLengthReplacement('color:var(--color-filterpill-icons-fill-active)', 'color:#fff'),
       ),
     alreadyPatchedPattern: ACTIVE_FILTER_PILL_ICON_COLOR_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'blackActiveFilterPillCloseIcons',
+    description: 'made active search filter pill close icons black on blue button',
+    filePattern: /\.js$/,
+    pattern: ACTIVE_FILTER_PILL_CLOSE_ICON_COLOR_PATTERN,
+    replacementForMatch: (match) =>
+      match.replace(/color:var\(--color-filterpill-closeicon-fill-active(?:hover)?\)/, (color) =>
+        sameLengthReplacement(color, 'color:#000'),
+      ),
+    alreadyPatchedPattern: ACTIVE_FILTER_PILL_CLOSE_ICON_COLOR_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
     isThematic: true,
   },

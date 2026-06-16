@@ -853,12 +853,21 @@ function verifyFilterPillLabelTextPatch(asarPath) {
     /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:var\(--color-filterpill-icons-fill-active\)\}/;
   const patchedActiveIconPattern =
     /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:#fff\s*\}/;
+  const staleActiveCloseIconPattern =
+    /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+(?::hover)?\{color:var\(--color-filterpill-closeicon-fill-active(?:hover)?\)\}/;
+  const patchedActiveCloseIconPattern =
+    /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+(?::hover)?\{color:#000\s*\}/;
   const staleFiles = matchingTextFiles(runtimeEntries, stalePattern);
   const patchedFiles = matchingTextFiles(runtimeEntries, patchedPattern);
   const staleActiveFiles = matchingTextFiles(runtimeEntries, staleActivePattern);
   const patchedActiveFiles = matchingTextFiles(runtimeEntries, patchedActivePattern);
   const staleActiveIconFiles = matchingTextFiles(runtimeEntries, staleActiveIconPattern);
   const patchedActiveIconFiles = matchingTextFiles(runtimeEntries, patchedActiveIconPattern);
+  const staleActiveCloseIconFiles = matchingTextFiles(runtimeEntries, staleActiveCloseIconPattern);
+  const patchedActiveCloseIconFiles = matchingTextFiles(
+    runtimeEntries,
+    patchedActiveCloseIconPattern,
+  );
 
   if (staleFiles.length > 0) {
     throw new Error(
@@ -875,6 +884,11 @@ function verifyFilterPillLabelTextPatch(asarPath) {
       `Unpatched low-contrast active filter pill icons remain in ${staleActiveIconFiles.join(', ')}.`,
     );
   }
+  if (staleActiveCloseIconFiles.length > 0) {
+    throw new Error(
+      `Unpatched white active filter pill close icons remain in ${staleActiveCloseIconFiles.join(', ')}.`,
+    );
+  }
   if (patchedFiles.length < 2) {
     throw new Error(`Missing visible filter pill label markers; found ${patchedFiles.length}.`);
   }
@@ -888,9 +902,14 @@ function verifyFilterPillLabelTextPatch(asarPath) {
       `Missing visible active filter pill icon markers; found ${patchedActiveIconFiles.length}.`,
     );
   }
+  if (patchedActiveCloseIconFiles.length < 2) {
+    throw new Error(
+      `Missing black active filter pill close icon markers; found ${patchedActiveCloseIconFiles.length}.`,
+    );
+  }
 
   process.stdout.write(
-    'Verified search filter pill labels and active icons are visible on black theme.\n',
+    'Verified search filter pill labels, active icons, and close icons on black theme.\n',
   );
 }
 

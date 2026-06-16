@@ -243,7 +243,7 @@ function makePatchableSearchDropdownItemChunkJs() {
 function makePatchableFilterPillChunkJs() {
   return [
     '(()=>{',
-    'const css=".jqbSVmnUH2EfY3lr{border-radius:var(--radius-sm);width:fit-content;max-width:240px;height:28px;color:var(--color-text-fill-secondary-enabled);background:var(--color-filterpill-base-fill-default);border:1px solid var(--color-filterpill-base-fill-default);white-space:nowrap;align-items:center;margin:8px 8px 0 0;padding-left:12px;padding-right:5px;display:inline-flex}.wqCWqnEkjWkpztCx{background-color:var(--color-filterpill-base-fill-default);color:var(--color-text-fill-secondary-enabled)}.z_id2ah139EuqFwM{background-color:var(--color-filterpill-base-fill-active);color:var(--color-text-fill-inverted-enabled)}.z_id2ah139EuqFwM .r67eM9WcqAoAhwof,.z_id2ah139EuqFwM .vtNwiuQWjQUa3F8C{color:var(--color-filterpill-icons-fill-active)}";',
+    'const css=".jqbSVmnUH2EfY3lr{border-radius:var(--radius-sm);width:fit-content;max-width:240px;height:28px;color:var(--color-text-fill-secondary-enabled);background:var(--color-filterpill-base-fill-default);border:1px solid var(--color-filterpill-base-fill-default);white-space:nowrap;align-items:center;margin:8px 8px 0 0;padding-left:12px;padding-right:5px;display:inline-flex}.wqCWqnEkjWkpztCx{background-color:var(--color-filterpill-base-fill-default);color:var(--color-text-fill-secondary-enabled)}.z_id2ah139EuqFwM{background-color:var(--color-filterpill-base-fill-active);color:var(--color-text-fill-inverted-enabled)}.z_id2ah139EuqFwM .r67eM9WcqAoAhwof,.z_id2ah139EuqFwM .vtNwiuQWjQUa3F8C{color:var(--color-filterpill-icons-fill-active)}.z_id2ah139EuqFwM .a7xnz3aZQokmX7q8{color:var(--color-filterpill-closeicon-fill-active)}.z_id2ah139EuqFwM .a7xnz3aZQokmX7q8:hover{color:var(--color-filterpill-closeicon-fill-activehover)}";',
     'void css;',
     '})();',
   ].join('');
@@ -608,6 +608,18 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedFilterPillChunkJs,
       /\.z_id2ah139EuqFwM \.r67eM9WcqAoAhwof,\.z_id2ah139EuqFwM \.vtNwiuQWjQUa3F8C\{color:var\(--color-filterpill-icons-fill-active\)\}/,
     );
+    assert.match(
+      patchedFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.a7xnz3aZQokmX7q8\{color:#000\s*\}/,
+    );
+    assert.match(
+      patchedFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.a7xnz3aZQokmX7q8:hover\{color:#000\s*\}/,
+    );
+    assert.doesNotMatch(
+      patchedFilterPillChunkJs,
+      /color:var\(--color-filterpill-closeicon-fill-active(?:hover)?\)/,
+    );
     assert.doesNotThrow(() => new Function(patchedFilterPillChunkJs));
     assert.match(
       patchedSecondFilterPillChunkJs,
@@ -620,6 +632,14 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.match(
       patchedSecondFilterPillChunkJs,
       /\.z_id2ah139EuqFwM \.r67eM9WcqAoAhwof,\.z_id2ah139EuqFwM \.vtNwiuQWjQUa3F8C\{color:#fff\s*\}/,
+    );
+    assert.match(
+      patchedSecondFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.a7xnz3aZQokmX7q8\{color:#000\s*\}/,
+    );
+    assert.match(
+      patchedSecondFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.a7xnz3aZQokmX7q8:hover\{color:#000\s*\}/,
     );
     assert.doesNotThrow(() => new Function(patchedSecondFilterPillChunkJs));
     const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, '4701.js');
