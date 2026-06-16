@@ -839,6 +839,61 @@ function verifySearchDropdownItemHoverPatch(asarPath) {
   process.stdout.write('Verified search result item hover background is visible on black theme.\n');
 }
 
+function verifyFilterPillLabelTextPatch(asarPath) {
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
+  const stalePattern =
+    /(?:color:var\(--color-text-fill-secondary-enabled\);background(?:-color)?:var\(--color-filterpill-base-fill-default\)|background(?:-color)?:var\(--color-filterpill-base-fill-default\);color:var\(--color-text-fill-secondary-enabled\))/;
+  const patchedPattern =
+    /(?:color:#d9d9d9\s*;background(?:-color)?:var\(--color-filterpill-base-fill-default\)\s*|background(?:-color)?:var\(--color-filterpill-base-fill-default\);color:#d9d9d9\s*)/;
+  const staleActivePattern =
+    /background-color:var\(--color-filterpill-base-fill-active\);color:var\(--color-text-fill-inverted-enabled\)/;
+  const patchedActivePattern =
+    /background-color:var\(--color-filterpill-base-fill-active\);color:#fff\s*/;
+  const staleActiveIconPattern =
+    /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:var\(--color-filterpill-icons-fill-active\)\}/;
+  const patchedActiveIconPattern =
+    /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:#fff\s*\}/;
+  const staleFiles = matchingTextFiles(runtimeEntries, stalePattern);
+  const patchedFiles = matchingTextFiles(runtimeEntries, patchedPattern);
+  const staleActiveFiles = matchingTextFiles(runtimeEntries, staleActivePattern);
+  const patchedActiveFiles = matchingTextFiles(runtimeEntries, patchedActivePattern);
+  const staleActiveIconFiles = matchingTextFiles(runtimeEntries, staleActiveIconPattern);
+  const patchedActiveIconFiles = matchingTextFiles(runtimeEntries, patchedActiveIconPattern);
+
+  if (staleFiles.length > 0) {
+    throw new Error(
+      `Unpatched low-contrast filter pill labels remain in ${staleFiles.join(', ')}.`,
+    );
+  }
+  if (staleActiveFiles.length > 0) {
+    throw new Error(
+      `Unpatched low-contrast active filter pill labels remain in ${staleActiveFiles.join(', ')}.`,
+    );
+  }
+  if (staleActiveIconFiles.length > 0) {
+    throw new Error(
+      `Unpatched low-contrast active filter pill icons remain in ${staleActiveIconFiles.join(', ')}.`,
+    );
+  }
+  if (patchedFiles.length < 2) {
+    throw new Error(`Missing visible filter pill label markers; found ${patchedFiles.length}.`);
+  }
+  if (patchedActiveFiles.length < 2) {
+    throw new Error(
+      `Missing visible active filter pill label markers; found ${patchedActiveFiles.length}.`,
+    );
+  }
+  if (patchedActiveIconFiles.length < 2) {
+    throw new Error(
+      `Missing visible active filter pill icon markers; found ${patchedActiveIconFiles.length}.`,
+    );
+  }
+
+  process.stdout.write(
+    'Verified search filter pill labels and active icons are visible on black theme.\n',
+  );
+}
+
 function verifySourceUrlPillWidthPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const sourceUrlFilePattern =
@@ -1108,6 +1163,7 @@ function verifyArtifact(options) {
     verifyTagSuggestionHoverPatch(asarPath);
     verifyDropdownItemHoverPatch(asarPath);
     verifySearchDropdownItemHoverPatch(asarPath);
+    verifyFilterPillLabelTextPatch(asarPath);
     verifySourceUrlPillWidthPatch(asarPath);
     verifyMultiSelectFloatingMenuPatch(asarPath);
     verifyNoteDetailFrameLinePatch(asarPath);

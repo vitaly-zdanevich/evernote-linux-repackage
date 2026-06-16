@@ -312,6 +312,18 @@ const SEARCH_DROPDOWN_ITEM_SELECTED_BACKGROUND_STYLES =
   '.brw4jmU4lkxuTAYR{background-color:var(--color-surface-fill-primary-hover)}';
 const SEARCH_DROPDOWN_ITEM_HOVER_BACKGROUND_REPLACEMENT =
   '.U1xedhQgLIIyQkOT:hover,.brw4jmU4lkxuTAYR{background-color:#1f1f1f}';
+const FILTER_PILL_LABEL_TEXT_PATTERN =
+  /(?:color:var\(--color-text-fill-secondary-enabled\);background(?:-color)?:var\(--color-filterpill-base-fill-default\)|background(?:-color)?:var\(--color-filterpill-base-fill-default\);color:var\(--color-text-fill-secondary-enabled\))/g;
+const FILTER_PILL_LABEL_TEXT_ALREADY_PATCHED_PATTERN =
+  /(?:color:#d9d9d9\s*;background(?:-color)?:var\(--color-filterpill-base-fill-default\)\s*|background(?:-color)?:var\(--color-filterpill-base-fill-default\);color:#d9d9d9\s*)/g;
+const ACTIVE_FILTER_PILL_LABEL_TEXT_PATTERN =
+  /background-color:var\(--color-filterpill-base-fill-active\);color:var\(--color-text-fill-inverted-enabled\)/g;
+const ACTIVE_FILTER_PILL_LABEL_TEXT_ALREADY_PATCHED_PATTERN =
+  /background-color:var\(--color-filterpill-base-fill-active\);color:#fff\s*/g;
+const ACTIVE_FILTER_PILL_ICON_COLOR_PATTERN =
+  /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:var\(--color-filterpill-icons-fill-active\)\}/g;
+const ACTIVE_FILTER_PILL_ICON_COLOR_ALREADY_PATCHED_PATTERN =
+  /\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+,\.z_id2ah139EuqFwM \.[A-Za-z0-9_-]+\{color:#fff\s*\}/g;
 const SOURCE_URL_PILL_WIDTH_FILE_PATTERN =
   /^(?:4701\.js|ce\/ce-[^/]+\.css|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.css)$/;
 const SOURCE_URL_PILL_CONTAINER_MAX_WIDTH_PATTERN =
@@ -629,6 +641,48 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     search: SEARCH_DROPDOWN_ITEM_SELECTED_BACKGROUND_STYLES,
     replacementPrefix: SEARCH_DROPDOWN_ITEM_HOVER_BACKGROUND_REPLACEMENT,
     replaceAll: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'visibleFilterPillLabels',
+    description: 'made search filter pill labels visible on black theme',
+    filePattern: /\.js$/,
+    pattern: FILTER_PILL_LABEL_TEXT_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        match.replace('color:var(--color-text-fill-secondary-enabled)', 'color:#d9d9d9'),
+      ),
+    alreadyPatchedPattern: FILTER_PILL_LABEL_TEXT_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'visibleActiveFilterPillLabels',
+    description: 'made active search filter pill labels visible on black theme',
+    filePattern: /\.js$/,
+    pattern: ACTIVE_FILTER_PILL_LABEL_TEXT_PATTERN,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        match.replace('color:var(--color-text-fill-inverted-enabled)', 'color:#fff'),
+      ),
+    alreadyPatchedPattern: ACTIVE_FILTER_PILL_LABEL_TEXT_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
+    isThematic: true,
+  },
+  {
+    resultKey: 'visibleActiveFilterPillIcons',
+    description: 'made active search filter pill icons visible on black theme',
+    filePattern: /\.js$/,
+    pattern: ACTIVE_FILTER_PILL_ICON_COLOR_PATTERN,
+    replacementForMatch: (match) =>
+      match.replace(
+        'color:var(--color-filterpill-icons-fill-active)',
+        sameLengthReplacement('color:var(--color-filterpill-icons-fill-active)', 'color:#fff'),
+      ),
+    alreadyPatchedPattern: ACTIVE_FILTER_PILL_ICON_COLOR_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {

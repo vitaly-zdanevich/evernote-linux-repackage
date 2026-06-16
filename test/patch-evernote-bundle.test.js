@@ -240,6 +240,15 @@ function makePatchableSearchDropdownItemChunkJs() {
   ].join('');
 }
 
+function makePatchableFilterPillChunkJs() {
+  return [
+    '(()=>{',
+    'const css=".jqbSVmnUH2EfY3lr{border-radius:var(--radius-sm);width:fit-content;max-width:240px;height:28px;color:var(--color-text-fill-secondary-enabled);background:var(--color-filterpill-base-fill-default);border:1px solid var(--color-filterpill-base-fill-default);white-space:nowrap;align-items:center;margin:8px 8px 0 0;padding-left:12px;padding-right:5px;display:inline-flex}.wqCWqnEkjWkpztCx{background-color:var(--color-filterpill-base-fill-default);color:var(--color-text-fill-secondary-enabled)}.z_id2ah139EuqFwM{background-color:var(--color-filterpill-base-fill-active);color:var(--color-text-fill-inverted-enabled)}.z_id2ah139EuqFwM .r67eM9WcqAoAhwof,.z_id2ah139EuqFwM .vtNwiuQWjQUa3F8C{color:var(--color-filterpill-icons-fill-active)}";',
+    'void css;',
+    '})();',
+  ].join('');
+}
+
 function makePatchableSourceUrlPillChunkJs() {
   const css = [
     '.SiiOu{align-items:center;background-color:var(--color-filterpill-base-fill-default);border:2px solid transparent;border-radius:var(--radius-sm);cursor:pointer;display:inline-flex;font-weight:400;max-width:375px;padding:0 6px;text-align:center}',
@@ -327,6 +336,8 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '3645.js': makePatchableCommonEditorDragChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
       '9911.js': makePatchableSearchDropdownItemChunkJs(),
+      '6431.js': makePatchableFilterPillChunkJs(),
+      '8823.js': makePatchableFilterPillChunkJs(),
       '8634.js': makePatchableMainNavChunkJs(),
       'boronTabShell.js': makePatchableTabShellJs(),
       '2002.js': makePatchableNavStylesChunkJs(),
@@ -567,6 +578,50 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       /\.brw4jmU4lkxuTAYR\{background-color:var\(--color-surface-fill-primary-hover\)\}/,
     );
     assert.doesNotThrow(() => new Function(patchedSearchDropdownItemChunkJs));
+    const patchedFilterPillChunkJs = readMinimalAsarEntry(asarPath, '6431.js');
+    const patchedSecondFilterPillChunkJs = readMinimalAsarEntry(asarPath, '8823.js');
+    assert.match(
+      patchedFilterPillChunkJs,
+      /color:#d9d9d9\s*;background:var\(--color-filterpill-base-fill-default\)/,
+    );
+    assert.match(
+      patchedFilterPillChunkJs,
+      /background-color:var\(--color-filterpill-base-fill-default\);color:#d9d9d9\s*/,
+    );
+    assert.doesNotMatch(
+      patchedFilterPillChunkJs,
+      /color:var\(--color-text-fill-secondary-enabled\);background(?:-color)?:var\(--color-filterpill-base-fill-default\)|background(?:-color)?:var\(--color-filterpill-base-fill-default\);color:var\(--color-text-fill-secondary-enabled\)/,
+    );
+    assert.match(
+      patchedFilterPillChunkJs,
+      /background-color:var\(--color-filterpill-base-fill-active\);color:#fff\s*/,
+    );
+    assert.doesNotMatch(
+      patchedFilterPillChunkJs,
+      /background-color:var\(--color-filterpill-base-fill-active\);color:var\(--color-text-fill-inverted-enabled\)/,
+    );
+    assert.match(
+      patchedFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.r67eM9WcqAoAhwof,\.z_id2ah139EuqFwM \.vtNwiuQWjQUa3F8C\{color:#fff\s*\}/,
+    );
+    assert.doesNotMatch(
+      patchedFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.r67eM9WcqAoAhwof,\.z_id2ah139EuqFwM \.vtNwiuQWjQUa3F8C\{color:var\(--color-filterpill-icons-fill-active\)\}/,
+    );
+    assert.doesNotThrow(() => new Function(patchedFilterPillChunkJs));
+    assert.match(
+      patchedSecondFilterPillChunkJs,
+      /background-color:var\(--color-filterpill-base-fill-default\);color:#d9d9d9\s*/,
+    );
+    assert.match(
+      patchedSecondFilterPillChunkJs,
+      /background-color:var\(--color-filterpill-base-fill-active\);color:#fff\s*/,
+    );
+    assert.match(
+      patchedSecondFilterPillChunkJs,
+      /\.z_id2ah139EuqFwM \.r67eM9WcqAoAhwof,\.z_id2ah139EuqFwM \.vtNwiuQWjQUa3F8C\{color:#fff\s*\}/,
+    );
+    assert.doesNotThrow(() => new Function(patchedSecondFilterPillChunkJs));
     const patchedSourceUrlPillChunkJs = readMinimalAsarEntry(asarPath, '4701.js');
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 6px/);
     assert.match(patchedSourceUrlPillChunkJs, /max-width:none\s*;padding:0 5px 0 2px/);
