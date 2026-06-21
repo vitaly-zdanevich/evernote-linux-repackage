@@ -485,18 +485,18 @@ function verifyF4NotesHotkeyPatch(asarPath) {
 function verifyFrozenCollapsedSidebarPatch(asarPath) {
   const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const staleMarkers = [
-    'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i)',
-    'W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=Ua.g$)',
-    'we=(0,ne.useMemo)((()=>({width:Q?Ua.Dl:z,height:"100%"})),[Q])',
-    'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge])',
-    'onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}',
+    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*-\([A-Za-z_$][\w$]*\+[A-Za-z_$][\w$]*\.B\),\[[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\]=\(0,[A-Za-z_$][\w$]*\.useState\)\([A-Za-z_$][\w$]*\)/,
+    /[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.NAV_DRAWER_WIDTH,[A-Za-z_$][\w$]*\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.IS_NAV_EXPANDED,[A-Za-z_$][\w$]*>=[A-Za-z_$][\w$]*\.g\$\)/,
+    /width:[A-Za-z_$][\w$]*\?[A-Za-z_$][\w$]*\.Dl:[A-Za-z_$][\w$]*,height:"100%"/,
+    /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useCallback\)\(\(\(\)=>\{[A-Za-z_$][\w$]*\?\([A-Za-z_$][\w$]*\(\),[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.Dl\)\):[A-Za-z_$][\w$]*\(\)\}\),\[[^\]]+\]\)/,
+    /onResize:[A-Za-z_$][\w$]*=>\{const [A-Za-z_$][\w$]*=[A-Za-z_$][\w$]* instanceof MouseEvent\?[A-Za-z_$][\w$]*\.pageX:[A-Za-z_$][\w$]*\.changedTouches\[0\]\.pageX;[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\)\)\}/,
   ];
   const patchedMarkers = [
-    'Z=j-(Dv+Pi.B),[q,W]=ne.useState(Ua.WB)',
-    'W(z),(0,pe.b)(H.NAV_DRAWER_WIDTH,z),(0,pe.b)(H.IS_NAV_EXPANDED,!1)',
-    'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])',
-    'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])',
-    'onResize:e=>{W(z)}',
+    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*-\([A-Za-z_$][\w$]*\+[A-Za-z_$][\w$]*\.B\),\[[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\]=[A-Za-z_$][\w$]*\.useState\([A-Za-z_$][\w$]*\.WB\)/,
+    /[A-Za-z_$][\w$]*\(30\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.NAV_DRAWER_WIDTH,30\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.IS_NAV_EXPANDED,!1\)/,
+    /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useMemo\)\(\(\(\)=>\(\{width:[A-Za-z_$][\w$]*,height:"100%"\}\)\),\[[A-Za-z_$][\w$]*\]\)/,
+    /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useCallback\)\(\(\(\)=>\{[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.WB\)\}\),\[[A-Za-z_$][\w$]*\]\)/,
+    /onResize:[A-Za-z_$][\w$]*=>\{[A-Za-z_$][\w$]*\(30\)\}/,
   ];
   const staleFiles = staleMarkers.flatMap((marker) => matchingTextFiles(runtimeEntries, marker));
   const patchedFiles = patchedMarkers.map((marker) => matchingTextFiles(runtimeEntries, marker));

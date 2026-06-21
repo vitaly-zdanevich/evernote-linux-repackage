@@ -213,6 +213,15 @@ function makePatchableTagSuggestionChunkJs() {
   ].join('');
 }
 
+function makePatchableCurrentBoronDragChunkJs() {
+  return [
+    '(()=>{',
+    'function boronDragPatch(){if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&i.setData("DownloadURL",`${o}:${t}:${a}`)}}}',
+    'void boronDragPatch;',
+    '})();',
+  ].join('');
+}
+
 function makePatchableCommonEditorDragChunkJs() {
   return [
     '(()=>{',
@@ -324,6 +333,20 @@ function makePatchableFrozenNavChunkJs() {
   ].join('');
 }
 
+function makePatchableCurrentFrozenNavChunkJs() {
+  return [
+    'function frozenNav(){',
+    'let Z,j,Jv,vs,q,W,K,Ia,z,V,ro,G,i,ne,l,pe,H,Q,we,ke,de,le,ge,me;',
+    'Z=j-(Jv+vs.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:z}=(0,Ia.N)(),V=ro.V0,G=Math.max(Math.min(ro.af,Z),V);',
+    'le=(0,ne.useCallback)((e=>{l(q),W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=ro.g$)}),[q]);',
+    'we=(0,ne.useMemo)((()=>({width:Q?ro.Dl:V,height:"100%"})),[Q]);',
+    'ke=(0,ne.useCallback)((()=>{Q?(de(),le(ro.Dl)):ge()}),[de,Q,le,ge]);',
+    'return {onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}};',
+    '}',
+    'function collapsedAllNotes(){return (0,a.jsx)(Ma.u,{disabled:n,label:at.ag.t("AllNotes.label"),placement:"right",children:(0,a.jsxs)("a",{ref:s,id:bo.bMj,"data-asloc":ro.YZ.Notes,className:"x"})})}',
+  ].join('');
+}
+
 test('patchEvernoteBundle applies Linux port patches in-place', () => {
   const tempDir = makeTempDir();
   try {
@@ -337,6 +360,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '4701.js': makePatchableSourceUrlPillChunkJs(),
       '8078.js': makePatchableTagSuggestionChunkJs(),
       '9505.js': makePatchableTagSuggestionChunkJs(),
+      '9977.js': makePatchableCurrentBoronDragChunkJs(),
       '3645.js': makePatchableCommonEditorDragChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
       '9911.js': makePatchableSearchDropdownItemChunkJs(),
@@ -348,6 +372,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '8453.js': makePatchableNavConstantsChunkJs(),
       '3014.js': makePatchableNoteListStylesChunkJs(),
       '4932.js': makePatchableFrozenNavChunkJs(),
+      '9978.js': makePatchableCurrentFrozenNavChunkJs(),
       '3407.js': makePatchableEditorNoteLayoutJs({ swappedNames: true }),
       'ce/ce-test.js': makePatchableEditorNoteLayoutJs(),
       'node_modules/@evernote/common-editor/ce.js': makePatchableEditorNoteLayoutJs(),
@@ -555,6 +580,17 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.doesNotMatch(patchedSecondTagSuggestionChunkJs, /transition-duration:\.1s/);
     assert.doesNotThrow(() => new Function(patchedSecondTagSuggestionChunkJs));
+    const patchedCurrentBoronDragChunkJs = readMinimalAsarEntry(asarPath, '9977.js');
+    assert.match(
+      patchedCurrentBoronDragChunkJs,
+      /if\(e\.isBoron\)t\.payload\.event\.preventDefault\(\),n\.broker\.call\("boron\.actions\.setNativeFilesForDrag"/,
+    );
+    assert.match(
+      patchedCurrentBoronDragChunkJs,
+      /a&&i\.setData\("DownloadURL",`\$\{o\}:\$\{t\}:\$\{a\}`\)/,
+    );
+    assert.doesNotMatch(patchedCurrentBoronDragChunkJs, /e\.isBoron&&n\.boronEnv\.isMac/);
+    assert.doesNotThrow(() => new Function(patchedCurrentBoronDragChunkJs));
     const patchedCommonEditorDragChunkJs = readMinimalAsarEntry(asarPath, '3645.js');
     assert.match(
       patchedCommonEditorDragChunkJs,
@@ -739,7 +775,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotMatch(patchedFrozenNavChunkJs, /"data-asloc":Ua\.YZ\.Notes/);
     assert.match(
       patchedFrozenNavChunkJs,
-      /W\(z\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,z\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,
+      /W\(30\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,30\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,
     );
     assert.match(
       patchedFrozenNavChunkJs,
@@ -747,9 +783,9 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.match(
       patchedFrozenNavChunkJs,
-      /ke=\(0,ne\.useCallback\)\(\(\(\)=>\{le\(z\)\}\),\[le,z\]\)/,
+      /ke=\(0,ne\.useCallback\)\(\(\(\)=>\{le\(Ua\.WB\)\}\),\[le\]\)/,
     );
-    assert.match(patchedFrozenNavChunkJs, /onResize:e=>\{W\(z\)\}/);
+    assert.match(patchedFrozenNavChunkJs, /onResize:e=>\{W\(30\)\}/);
     assert.doesNotMatch(patchedFrozenNavChunkJs, /\[q,W\]=\(0,ne\.useState\)\(i\)/);
     assert.doesNotMatch(
       patchedFrozenNavChunkJs,
@@ -759,6 +795,35 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotMatch(patchedFrozenNavChunkJs, /Q\?\(de\(\),le\(Ua\.Dl\)\):ge\(\)/);
     assert.doesNotMatch(patchedFrozenNavChunkJs, /W\(me\(t\)\)/);
     assert.doesNotThrow(() => new Function(patchedFrozenNavChunkJs));
+    const patchedCurrentFrozenNavChunkJs = readMinimalAsarEntry(asarPath, '9978.js');
+    assert.match(patchedCurrentFrozenNavChunkJs, /\[q,W\]=ne\.useState\(ro\.WB\)/);
+    assert.match(
+      patchedCurrentFrozenNavChunkJs,
+      /W\(30\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,30\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,
+    );
+    assert.match(
+      patchedCurrentFrozenNavChunkJs,
+      /we=\(0,ne\.useMemo\)\(\(\(\)=>\(\{width:V,height:"100%"\}\)\),\[V\]\)/,
+    );
+    assert.match(
+      patchedCurrentFrozenNavChunkJs,
+      /ke=\(0,ne\.useCallback\)\(\(\(\)=>\{le\(ro\.WB\)\}\),\[le\]\)/,
+    );
+    assert.match(patchedCurrentFrozenNavChunkJs, /onResize:e=>\{W\(30\)\}/);
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /\[q,W\]=\(0,ne\.useState\)\(i\)/);
+    assert.doesNotMatch(
+      patchedCurrentFrozenNavChunkJs,
+      /W\(e\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,e\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,e>=ro\.g\$\)/,
+    );
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /width:Q\?ro\.Dl:V/);
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /Q\?\(de\(\),le\(ro\.Dl\)\):ge\(\)/);
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /W\(me\(t\)\)/);
+    assert.match(
+      patchedCurrentFrozenNavChunkJs,
+      /label:at\.ag\.t\("AllNotes\.label"\)\+" \(F4\)",placement:"right"/,
+    );
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /"data-asloc":ro\.YZ\.Notes/);
+    assert.doesNotThrow(() => new Function(patchedCurrentFrozenNavChunkJs));
 
     const secondPatch = patchEvernoteBundle(asarPath);
     for (const patch of patches) {

@@ -355,35 +355,91 @@ const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
 const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT =
   'if((0,F.Ld)())n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
 const BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN =
-  /if\(e\.isBoron&&n\.boronEnv\.isMac\)t\.payload\.event\.preventDefault\(\),(?:n\.boronEnv\.isMac&&)?n\.broker\.call\("boron\.actions\.setNativeFilesForDrag",o\.resources\.map\(\(e=>\(\{url:e\.url,filename:e\.filename\?\?"",mime:e\.mime\}\)\)\)\);else\{const e=o\.resources\[0\];if\(e\)\{const\{filename:t=`\$\{n\.now\(\)\}`,mime:o,url:a\}=e;a&&r\.setData\("DownloadURL",`\$\{o\}:\$\{t\}:\$\{a\}`\)\}\}/g;
+  /if\(e\.isBoron&&n\.boronEnv\.isMac\)t\.payload\.event\.preventDefault\(\),(?:n\.boronEnv\.isMac&&)?n\.broker\.call\("boron\.actions\.setNativeFilesForDrag",o\.resources\.map\(\(e=>\(\{url:e\.url,filename:e\.filename\?\?"",mime:e\.mime\}\)\)\)\);else\{const e=o\.resources\[0\];if\(e\)\{const\{filename:t=`\$\{n\.now\(\)\}`,mime:o,url:a\}=e;a&&([A-Za-z_$][\w$]*)\.setData\("DownloadURL",`\$\{o\}:\$\{t\}:\$\{a\}`\)\}\}/g;
 const BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
   /if\(e\.isBoron\)t\.payload\.event\.preventDefault\(\),n\.broker\.call\("boron\.actions\.setNativeFilesForDrag"/g;
-const BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT =
-  'if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}';
+function boronNativeResourceDragReplacement(dataTransferName) {
+  return `if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=\`\${n.now()}\`,mime:o,url:a}=e;a&&${dataTransferName}.setData("DownloadURL",\`\${o}:\${t}:\${a}\`)}}`;
+}
 const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_STYLES =
   'let n=!1;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
 const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT =
   'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
 const IMPORT_FOLDER_IGNORE_INITIAL_STYLES = 'ignoreInitial:!1';
 const IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT = 'ignoreInitial:!0';
-const FROZEN_NAV_INITIAL_WIDTH_STYLES =
-  'Z=j-(Dv+Pi.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.V0,G=';
-const FROZEN_NAV_INITIAL_WIDTH_REPLACEMENT =
-  'Z=j-(Dv+Pi.B),[q,W]=ne.useState(Ua.WB),K=(0,ne.useRef)(!0),{show_download_app_button:V}=(0,la.N)(),z=Ua.WB,G=';
-const FROZEN_NAV_PERSIST_WIDTH_STYLES =
-  'le=(0,ne.useCallback)((e=>{l(q),W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=Ua.g$)}),[q])';
-const FROZEN_NAV_PERSIST_WIDTH_REPLACEMENT =
-  'le=(0,ne.useCallback)((e=>{l(q),W(z),(0,pe.b)(H.NAV_DRAWER_WIDTH,z),(0,pe.b)(H.IS_NAV_EXPANDED,!1)}),[q,z])';
-const FROZEN_NAV_VISIBLE_WIDTH_STYLES =
-  'we=(0,ne.useMemo)((()=>({width:Q?Ua.Dl:z,height:"100%"})),[Q])';
-const FROZEN_NAV_VISIBLE_WIDTH_REPLACEMENT =
-  'we=(0,ne.useMemo)((()=>({width:z,height:"100%"})),[z])';
-const FROZEN_NAV_TOGGLE_STYLES =
-  'ke=(0,ne.useCallback)((()=>{Q?(de(),le(Ua.Dl)):ge()}),[de,Q,le,ge])';
-const FROZEN_NAV_TOGGLE_REPLACEMENT = 'ke=(0,ne.useCallback)((()=>{le(z)}),[le,z])';
-const FROZEN_NAV_RESIZE_STYLES =
-  'onResize:e=>{const t=e instanceof MouseEvent?e.pageX:e.changedTouches[0].pageX;W(me(t))}';
-const FROZEN_NAV_RESIZE_REPLACEMENT = 'onResize:e=>{W(z)}';
+const FROZEN_NAV_INITIAL_WIDTH_PATTERN =
+  /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)-\(([A-Za-z_$][\w$]*)\+([A-Za-z_$][\w$]*)\.B\),\[([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\]=\(0,([A-Za-z_$][\w$]*)\.useState\)\(([A-Za-z_$][\w$]*)\),([A-Za-z_$][\w$]*)=\(0,\7\.useRef\)\(!0\),\{show_download_app_button:([A-Za-z_$][\w$]*)\}=\(0,([A-Za-z_$][\w$]*)\.N\)\(\),([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\.V0,([A-Za-z_$][\w$]*)=/g;
+const FROZEN_NAV_INITIAL_WIDTH_ALREADY_PATCHED_PATTERN =
+  /\[[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\]=[A-Za-z_$][\w$]*\.useState\([A-Za-z_$][\w$]*\.WB\),[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useRef\)\(!0\),\{show_download_app_button:[A-Za-z_$][\w$]*\}=\(0,[A-Za-z_$][\w$]*\.N\)\(\),[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=/g;
+function frozenNavInitialWidthReplacement(
+  calcWidthName,
+  viewportWidthName,
+  noteMinWidthName,
+  sidePaddingModuleName,
+  navWidthName,
+  setNavWidthName,
+  reactModuleName,
+  _initialWidthName,
+  firstRenderRefName,
+  downloadFlagName,
+  featureModuleName,
+  collapsedWidthName,
+  navConstantsModuleName,
+  maxWidthName,
+) {
+  return `${calcWidthName}=${viewportWidthName}-(${noteMinWidthName}+${sidePaddingModuleName}.B),[${navWidthName},${setNavWidthName}]=${reactModuleName}.useState(${navConstantsModuleName}.WB),${firstRenderRefName}=(0,${reactModuleName}.useRef)(!0),{show_download_app_button:${downloadFlagName}}=(0,${featureModuleName}.N)(),${collapsedWidthName}=${navConstantsModuleName}.WB,${maxWidthName}=`;
+}
+const FROZEN_NAV_PERSIST_WIDTH_PATTERN =
+  /([A-Za-z_$][\w$]*)=\(0,([A-Za-z_$][\w$]*)\.useCallback\)\(\(([A-Za-z_$][\w$]*)=>\{([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\),([A-Za-z_$][\w$]*)\(\3\),\(0,([A-Za-z_$][\w$]*)\.b\)\(([A-Za-z_$][\w$]*)\.NAV_DRAWER_WIDTH,\3\),\(0,\7\.b\)\(\8\.IS_NAV_EXPANDED,\3>=([A-Za-z_$][\w$]*)\.g\$\)\}\),\[\5\]\)/g;
+const FROZEN_NAV_PERSIST_WIDTH_ALREADY_PATCHED_PATTERN =
+  /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useCallback\)\(\([A-Za-z_$][\w$]*=>\{[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\(30\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.NAV_DRAWER_WIDTH,30\),\(0,[A-Za-z_$][\w$]*\.b\)\([A-Za-z_$][\w$]*\.IS_NAV_EXPANDED,!1\)\}\),\[[A-Za-z_$][\w$]*\]\)/g;
+function frozenNavPersistWidthReplacement(
+  callbackName,
+  reactModuleName,
+  argumentName,
+  previousWidthFunctionName,
+  navWidthName,
+  setNavWidthName,
+  storageModuleName,
+  settingsModuleName,
+  _navConstantsModuleName,
+) {
+  return `${callbackName}=(0,${reactModuleName}.useCallback)((${argumentName}=>{${previousWidthFunctionName}(${navWidthName}),${setNavWidthName}(30),(0,${storageModuleName}.b)(${settingsModuleName}.NAV_DRAWER_WIDTH,30),(0,${storageModuleName}.b)(${settingsModuleName}.IS_NAV_EXPANDED,!1)}),[${navWidthName}])`;
+}
+const FROZEN_NAV_VISIBLE_WIDTH_PATTERN =
+  /([A-Za-z_$][\w$]*)=\(0,([A-Za-z_$][\w$]*)\.useMemo\)\(\(\(\)=>\(\{width:([A-Za-z_$][\w$]*)\?([A-Za-z_$][\w$]*)\.Dl:([A-Za-z_$][\w$]*),height:"100%"\}\)\),\[\3\]\)/g;
+const FROZEN_NAV_VISIBLE_WIDTH_ALREADY_PATCHED_PATTERN =
+  /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useMemo\)\(\(\(\)=>\(\{width:[A-Za-z_$][\w$]*,height:"100%"\}\)\),\[[A-Za-z_$][\w$]*\]\)/g;
+function frozenNavVisibleWidthReplacement(
+  memoName,
+  reactModuleName,
+  _expandedName,
+  _navConstantsModuleName,
+  collapsedWidthName,
+) {
+  return `${memoName}=(0,${reactModuleName}.useMemo)((()=>({width:${collapsedWidthName},height:"100%"})),[${collapsedWidthName}])`;
+}
+const FROZEN_NAV_TOGGLE_PATTERN =
+  /([A-Za-z_$][\w$]*)=\(0,([A-Za-z_$][\w$]*)\.useCallback\)\(\(\(\)=>\{([A-Za-z_$][\w$]*)\?\(([A-Za-z_$][\w$]*)\(\),([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\.Dl\)\):([A-Za-z_$][\w$]*)\(\)\}\),\[\4,\3,\5,\7\]\)/g;
+const FROZEN_NAV_TOGGLE_ALREADY_PATCHED_PATTERN =
+  /[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useCallback\)\(\(\(\)=>\{[A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\.WB\)\}\),\[[A-Za-z_$][\w$]*\]\)/g;
+function frozenNavToggleReplacement(
+  callbackName,
+  reactModuleName,
+  _isExpandedName,
+  _transitionFunctionName,
+  persistWidthFunctionName,
+  navConstantsModuleName,
+) {
+  return `${callbackName}=(0,${reactModuleName}.useCallback)((()=>{${persistWidthFunctionName}(${navConstantsModuleName}.WB)}),[${persistWidthFunctionName}])`;
+}
+const FROZEN_NAV_RESIZE_PATTERN =
+  /onResize:([A-Za-z_$][\w$]*)=>\{const ([A-Za-z_$][\w$]*)=\1 instanceof MouseEvent\?\1\.pageX:\1\.changedTouches\[0\]\.pageX;([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\(\2\)\)\}/g;
+const FROZEN_NAV_RESIZE_ALREADY_PATCHED_PATTERN =
+  /onResize:[A-Za-z_$][\w$]*=>\{[A-Za-z_$][\w$]*\(30\)\}/g;
+function frozenNavResizeReplacement(eventName, _pointerXName, setNavWidthName) {
+  return `onResize:${eventName}=>{${setNavWidthName}(30)}`;
+}
 const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
@@ -410,7 +466,7 @@ const F4_NOTES_HOTKEY_REPLACEMENT =
 const F4_NOTES_HOTKEY_ALREADY_PATCHED_PATTERN =
   /addEventListener\("keydown",[^"]+"F4"==[A-Za-z_$][\w$]*\.key/g;
 const COLLAPSED_NOTES_TOOLTIP_PATTERN =
-  /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,a\.jsxs\)\("a",\{ref:([A-Za-z_$][\w$]*),id:Ya\.bMj,"data-asloc":Ua\.YZ\.Notes,/g;
+  /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,a\.jsxs\)\("a",\{ref:([A-Za-z_$][\w$]*),id:([A-Za-z_$][\w$]*)\.bMj,"data-asloc":([A-Za-z_$][\w$]*)\.YZ\.Notes,/g;
 const COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN =
   /label:at\.ag\.t\("AllNotes\.label"\)\+" \(F4\)"/g;
 
@@ -809,8 +865,8 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       'used native resource file dragging from the Boron editor because dragging does not work on Linux without it',
     filePattern: /\.js$/,
     pattern: BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN,
-    replacementForMatch: (match) =>
-      sameLengthReplacement(match, BORON_NATIVE_RESOURCE_DRAG_REPLACEMENT),
+    replacementForMatch: (match, _filePath, dataTransferName) =>
+      sameLengthReplacement(match, boronNativeResourceDragReplacement(dataTransferName)),
     alreadyPatchedPattern: BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
   },
@@ -832,45 +888,55 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'frozenCollapsedSidebarInitialWidth',
     description: 'started the left sidebar in collapsed width for the black theme',
     filePattern: /\.js$/,
-    search: FROZEN_NAV_INITIAL_WIDTH_STYLES,
-    replacementPrefix: FROZEN_NAV_INITIAL_WIDTH_REPLACEMENT,
-    replaceAll: true,
+    pattern: FROZEN_NAV_INITIAL_WIDTH_PATTERN,
+    replacementForMatch: (match, filePath, ...captures) =>
+      sameLengthReplacement(match, frozenNavInitialWidthReplacement(...captures), filePath),
+    alreadyPatchedPattern: FROZEN_NAV_INITIAL_WIDTH_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
     resultKey: 'frozenCollapsedSidebarPersistedWidth',
     description: 'persisted the left sidebar as collapsed for the black theme',
     filePattern: /\.js$/,
-    search: FROZEN_NAV_PERSIST_WIDTH_STYLES,
-    replacementPrefix: FROZEN_NAV_PERSIST_WIDTH_REPLACEMENT,
-    replaceAll: true,
+    pattern: FROZEN_NAV_PERSIST_WIDTH_PATTERN,
+    replacementForMatch: (match, filePath, ...captures) =>
+      sameLengthReplacement(match, frozenNavPersistWidthReplacement(...captures), filePath),
+    alreadyPatchedPattern: FROZEN_NAV_PERSIST_WIDTH_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
     resultKey: 'frozenCollapsedSidebarVisibleWidth',
     description: 'rendered the left sidebar at collapsed width for the black theme',
     filePattern: /\.js$/,
-    search: FROZEN_NAV_VISIBLE_WIDTH_STYLES,
-    replacementPrefix: FROZEN_NAV_VISIBLE_WIDTH_REPLACEMENT,
-    replaceAll: true,
+    pattern: FROZEN_NAV_VISIBLE_WIDTH_PATTERN,
+    replacementForMatch: (match, filePath, ...captures) =>
+      sameLengthReplacement(match, frozenNavVisibleWidthReplacement(...captures), filePath),
+    alreadyPatchedPattern: FROZEN_NAV_VISIBLE_WIDTH_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
     resultKey: 'frozenCollapsedSidebarToggle',
     description: 'made left sidebar toggle keep the collapsed rail for the black theme',
     filePattern: /\.js$/,
-    search: FROZEN_NAV_TOGGLE_STYLES,
-    replacementPrefix: FROZEN_NAV_TOGGLE_REPLACEMENT,
-    replaceAll: true,
+    pattern: FROZEN_NAV_TOGGLE_PATTERN,
+    replacementForMatch: (match, filePath, ...captures) =>
+      sameLengthReplacement(match, frozenNavToggleReplacement(...captures), filePath),
+    alreadyPatchedPattern: FROZEN_NAV_TOGGLE_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
     resultKey: 'frozenCollapsedSidebarResize',
     description: 'made left sidebar resize keep the collapsed rail for the black theme',
     filePattern: /\.js$/,
-    search: FROZEN_NAV_RESIZE_STYLES,
-    replacementPrefix: FROZEN_NAV_RESIZE_REPLACEMENT,
-    replaceAll: true,
+    pattern: FROZEN_NAV_RESIZE_PATTERN,
+    replacementForMatch: (match, filePath, ...captures) =>
+      sameLengthReplacement(match, frozenNavResizeReplacement(...captures), filePath),
+    alreadyPatchedPattern: FROZEN_NAV_RESIZE_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
@@ -935,10 +1001,10 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     description: 'labeled collapsed Notes sidebar tooltip with F4 shortcut',
     filePattern: /\.js$/,
     pattern: COLLAPSED_NOTES_TOOLTIP_PATTERN,
-    replacementForMatch: (match, _filePath, refName) =>
+    replacementForMatch: (match, _filePath, refName, elementIdsName) =>
       sameLengthReplacement(
         match,
-        `label:at.ag.t("AllNotes.label")+" (F4)",placement:"right",children:(0,a.jsxs)("a",{ref:${refName},id:Ya.bMj,`,
+        `label:at.ag.t("AllNotes.label")+" (F4)",placement:"right",children:(0,a.jsxs)("a",{ref:${refName},id:${elementIdsName}.bMj,`,
       ),
     alreadyPatchedPattern: COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
