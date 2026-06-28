@@ -8,7 +8,7 @@ The current Windows installer is an NSIS archive containing an Electron app. The
 
 ## Status
 
-Validated with Evernote `11.21.5` from `https://win.desktop.evernote.com/builds/Evernote-latest.exe`:
+Validated with Evernote `11.22.4` from `https://win.desktop.evernote.com/builds/Evernote-latest.exe`:
 
 - Electron payload detected: `37.6.0`
 - Main process starts under Linux Electron
@@ -92,8 +92,8 @@ checksum-pinned build, provide the expected installer checksum and versions:
 
 ```bash
 EVERNOTE_URL=https://win.desktop.evernote.com/builds/Evernote-latest.exe \
-EVERNOTE_SHA256=78e5fac161c3d269a5f42118a1e7ffc882134fad3f050d5aab3329fde2292fec \
-EVERNOTE_EXPECTED_VERSION=11.21.5 \
+EVERNOTE_SHA256=601552957eaa1394a93df483f93ad61582a298b7f202f3fb89b56cc02d3fc0dd \
+EVERNOTE_EXPECTED_VERSION=11.22.4 \
 ELECTRON_EXPECTED_VERSION=37.6.0 \
 ELECTRON_SHA256=02e644d75392a1ea8991106bc77e1db243ee1fc0c23107dc3b253ed545dd4c66 \
 npm run build

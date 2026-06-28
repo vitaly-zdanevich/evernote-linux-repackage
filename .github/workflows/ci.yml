@@ -73,9 +73,9 @@ jobs:
       APPIMAGE_ARCH: ${{ matrix.appimage_arch }}
       EVERNOTE_BLACK_THEME: ${{ matrix.black_theme }}
       EVERNOTE_URL: "https://win.desktop.evernote.com/builds/Evernote-latest.exe"
-      EVERNOTE_CACHE_NAME: "Evernote-11.21.5.20260615163427.exe"
-      EVERNOTE_EXPECTED_VERSION: "11.21.5"
-      EVERNOTE_SHA256: "78e5fac161c3d269a5f42118a1e7ffc882134fad3f050d5aab3329fde2292fec"
+      EVERNOTE_CACHE_NAME: "Evernote-11.22.4.20260623112148.exe"
+      EVERNOTE_EXPECTED_VERSION: "11.22.4"
+      EVERNOTE_SHA256: "601552957eaa1394a93df483f93ad61582a298b7f202f3fb89b56cc02d3fc0dd"
       ELECTRON_EXPECTED_VERSION: "37.6.0"
       ELECTRON_SHA256: ${{ matrix.electron_sha256 }}
     steps:
