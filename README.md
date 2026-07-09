@@ -343,6 +343,5 @@ Other Evernote-related projects by Vitaly Zdanevich:
 ### GitLab
 
 - [bot_telegram_evernote](https://gitlab.com/vitaly-zdanevich/bot_telegram_evernote) - Telegram bot for Evernote.
-- [reeknote-deletion_scheduled-81766713](https://gitlab.com/vitaly-zdanevich/reeknote-deletion_scheduled-81766713) - older Rust CLI for Evernote.
 - [evernote/hotkey](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/hotkey) - userscript for Evernote hotkeys.
 - [evernote-direct-link-opening-without-you-are-leaving](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/evernote-direct-link-opening-without-you-are-leaving) - userscript for opening Evernote links directly.
