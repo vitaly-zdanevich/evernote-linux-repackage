@@ -326,3 +326,23 @@ Login secrets are handled by `keytar` through the Linux Secret Service/libsecret
 The source code, scripts, tests, CI configuration, and documentation in this repository are licensed under the MIT License. See `LICENSE`.
 
 That license does not cover Evernote, Bending Spoons, Electron, appimagetool, or any other third-party software, trademarks, logos, icons, binaries, archives, installers, AppImages, or other proprietary materials downloaded, extracted, rebuilt, packaged, or referenced by this project. Those materials remain subject to their respective owners' licenses and terms.
+
+## Related Projects
+
+Other Evernote-related projects by Vitaly Zdanevich:
+
+### GitHub
+
+- [evernote-calendar](https://github.com/vitaly-zdanevich/evernote-calendar) - calendar for Evernote Web inside Evernote Web.
+- [reeknote](https://github.com/vitaly-zdanevich/reeknote) - command-line Evernote client.
+- [pinterest-saves-to-evernote](https://github.com/vitaly-zdanevich/pinterest-saves-to-evernote) - GitHub Action that saves Pinterest pins to Evernote.
+- [wikipedia_diffs_to_evernote](https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote) - sync Wikipedia edits to Evernote notes.
+- [yandex-music-likes-to-evernote](https://github.com/vitaly-zdanevich/yandex-music-likes-to-evernote) - export liked Yandex Music tracks to Evernote notes.
+- [everpublich](https://github.com/vitaly-zdanevich/everpublich) - sync an Evernote notebook to a static Zola blog.
+
+### GitLab
+
+- [bot_telegram_evernote](https://gitlab.com/vitaly-zdanevich/bot_telegram_evernote) - Telegram bot for Evernote.
+- [reeknote-deletion_scheduled-81766713](https://gitlab.com/vitaly-zdanevich/reeknote-deletion_scheduled-81766713) - older Rust CLI for Evernote.
+- [evernote/hotkey](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/hotkey) - userscript for Evernote hotkeys.
+- [evernote-direct-link-opening-without-you-are-leaving](https://gitlab.com/vitaly-zdanevich-userscripts/evernote/evernote-direct-link-opening-without-you-are-leaving) - userscript for opening Evernote links directly.
