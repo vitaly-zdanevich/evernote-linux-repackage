@@ -333,7 +333,6 @@ Other Evernote-related projects by Vitaly Zdanevich:
 
 ### GitHub
 
-- [evernote-calendar](https://github.com/vitaly-zdanevich/evernote-calendar) - calendar for Evernote Web inside Evernote Web.
 - [reeknote](https://github.com/vitaly-zdanevich/reeknote) - command-line Evernote client.
 - [pinterest-saves-to-evernote](https://github.com/vitaly-zdanevich/pinterest-saves-to-evernote) - GitHub Action that saves Pinterest pins to Evernote.
 - [wikipedia_diffs_to_evernote](https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote) - sync Wikipedia edits to Evernote notes.
