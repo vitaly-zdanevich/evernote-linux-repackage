@@ -338,6 +338,7 @@ Other Evernote-related projects by Vitaly Zdanevich:
 - [wikipedia_diffs_to_evernote](https://github.com/vitaly-zdanevich/wikipedia_diffs_to_evernote) - sync Wikipedia edits to Evernote notes.
 - [yandex-music-likes-to-evernote](https://github.com/vitaly-zdanevich/yandex-music-likes-to-evernote) - export liked Yandex Music tracks to Evernote notes.
 - [everpublich](https://github.com/vitaly-zdanevich/everpublich) - sync an Evernote notebook to a static Zola blog.
+- [evernote-pwa](https://github.com/vitaly-zdanevich/evernote-pwa) - installable web app to view and edit the latest notes, offline-capable.
 
 ### GitLab
 
