@@ -1105,7 +1105,8 @@ function getResourceMimeFilePath`,
     description: 'quit app when the main window is closed',
     filePath: 'main.js',
     search: 'this.hidden=!0,this.window.hide()}}),this.window.on("show"',
-    replacementPrefix: 'h.app.quit(),0}}),this.window.on("show"',
+    // Load Electron by name; upstream minification can reassign its import alias.
+    replacementPrefix: 'require("electron").app.quit()}}),this.window.on("show"',
   },
   {
     resultKey: 'suppressTabStatePublishAfterDestroy',

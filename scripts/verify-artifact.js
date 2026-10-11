@@ -28,7 +28,7 @@ const REQUIRED_PATCH_MARKERS = [
   },
   {
     name: 'main window close quits app',
-    value: 'h.app.quit(),0}}),this.window.on("show"',
+    value: 'require("electron").app.quit()}}),this.window.on("show"',
   },
   {
     name: 'tab destroy state publish suppressed',

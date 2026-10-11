@@ -86,13 +86,49 @@ function makePatchableMainJs() {
     'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;let{feedbackLevel:a}=this;this.currentChannel=t}',
     'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";return {url:t,platform:a,release:n}}',
     '}',
-    'const h={app:{quit(){}}};',
+    'const h={createLogger(){}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
     'let S=async(t,a)=>{let n=await A(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(m.default)})}catch(t){v.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await A(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
     'const I=/(^|[\\/\\\\])\\./,i={default:{isMac:false,isWin:false}},R={ignored:[t=>L(t),I],depth:0,ignoreInitial:!1,followSymlinks:!1};async function el(t){return false}async function ed(t){return false}async function shouldImportFolderFile(t){let n=!1;return i.default.isMac?n=await el(t):i.default.isWin&&(n=await ed(t)),n}',
-    'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
+    'function mainWindowClosePatch(){this.window.on("close",async t=>{if(t.preventDefault(),!this.window)return;let a=(0,P.closeAudioRecordingAndWaitForSync)(this.window.id);if(!a||await a()){if(l.default.isWin)this.window.setFullScreen(!1);else if(l.default.isMac&&this.window.isFullScreen()){this.window.once("leave-full-screen",()=>{this.window&&(this.hidden=!0,this.window.hide())}),this.window.setFullScreen(!1);return}this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
     'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
   ].join('');
+}
+
+/** Runs the bundled close handler with Linux window, recording, and Electron mocks. */
+function mainWindowCloseHarness(mainJs, waitForSync = null) {
+  const state = { quitCalls: 0, preventDefaultCalls: 0 };
+  const handlers = new Map();
+  const controller = {
+    window: {
+      id: 7,
+      on(event, handler) {
+        handlers.set(event, handler);
+      },
+      hide() {
+        assert.fail('Closing the main window must not hide it');
+      },
+    },
+  };
+  const register = new Function('require', 'P', 'l', `${mainJs};return mainWindowClosePatch;`)(
+    (moduleName) => {
+      assert.equal(moduleName, 'electron');
+      return { app: { quit: () => state.quitCalls++ } };
+    },
+    {
+      closeAudioRecordingAndWaitForSync(windowId) {
+        assert.equal(windowId, 7);
+        return waitForSync;
+      },
+    },
+    { default: { isWin: false, isMac: false } },
+  );
+  register.call(controller);
+  return {
+    state,
+    controller,
+    close: () => handlers.get('close')({ preventDefault: () => state.preventDefaultCalls++ }),
+  };
 }
 
 function makePatchableMainResourceProxyJs() {
@@ -401,7 +437,7 @@ function makePatchableCurrentFrozenNavChunkJs() {
   ].join('');
 }
 
-test('patchEvernoteBundle applies Linux port patches in-place', () => {
+test('patchEvernoteBundle applies Linux port patches in-place', async (t) => {
   const tempDir = makeTempDir();
   try {
     const asarPath = path.join(tempDir, 'app.asar');
@@ -469,7 +505,39 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       patchedMainJs,
       /async getRemoteUpdatedList\(\)\{return\{feedbackLevel:this\.feedbackLevel\};let t=this\.remoteCheckUrl;/,
     );
-    assert.match(patchedMainJs, /h\.app\.quit\(\),0\}\}\),this\.window\.on\("show"/);
+    assert.match(
+      patchedMainJs,
+      /require\("electron"\)\.app\.quit\(\)\}\}\),this\.window\.on\("show"/,
+    );
+    await t.test('main window close quits despite upstream import alias changes', async () => {
+      const harness = mainWindowCloseHarness(patchedMainJs);
+      await harness.close();
+      assert.equal(harness.state.quitCalls, 1);
+      assert.equal(harness.state.preventDefaultCalls, 1);
+    });
+    await t.test('main window close waits for recording synchronization', async () => {
+      let resolveSync;
+      const sync = new Promise((resolve) => {
+        resolveSync = resolve;
+      });
+      const harness = mainWindowCloseHarness(patchedMainJs, () => sync);
+      const closing = harness.close();
+      assert.equal(harness.state.quitCalls, 0);
+      resolveSync(true);
+      await closing;
+      assert.equal(harness.state.quitCalls, 1);
+    });
+    await t.test('main window close respects cancelled recording shutdown', async () => {
+      const harness = mainWindowCloseHarness(patchedMainJs, async () => false);
+      await harness.close();
+      assert.equal(harness.state.quitCalls, 0);
+    });
+    await t.test('main window close ignores an already removed window', async () => {
+      const harness = mainWindowCloseHarness(patchedMainJs);
+      harness.controller.window = null;
+      await harness.close();
+      assert.equal(harness.state.quitCalls, 0);
+    });
     assert.match(
       patchedMainJs,
       /this\.activeTabId===t&&\(this\.onActiveWebContentsChange\?\.\(null,null\),this\.activeTabId=null\),void 0\s*\)/,
