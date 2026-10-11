@@ -249,13 +249,22 @@ function assertJavaScriptSyntax(filePath, text) {
 }
 
 function webpackCssRuntimeStringRange(text, filePath) {
-  const startMarker = 'A.push([o.id,"';
-  const startMarkerIndex = text.indexOf(startMarker);
-  if (startMarkerIndex === -1) {
+  const tokenIndex = text.indexOf('--color-background-base-fill-primary');
+  if (tokenIndex === -1) {
+    throw new Error(`Unable to find Webpack CSS theme token in ${filePath}.`);
+  }
+
+  const pushIndex = text.lastIndexOf('.push([', tokenIndex);
+  if (pushIndex === -1) {
+    throw new Error(`Unable to find Webpack CSS runtime push call in ${filePath}.`);
+  }
+
+  const cssStringIndex = text.indexOf(',"', pushIndex);
+  if (cssStringIndex === -1 || cssStringIndex > tokenIndex) {
     throw new Error(`Unable to find Webpack CSS runtime string start in ${filePath}.`);
   }
 
-  const start = startMarkerIndex + startMarker.length;
+  const start = cssStringIndex + 2;
   const endMarker = '","",{version:3';
   const end = text.indexOf(endMarker, start);
   if (end === -1) {
@@ -295,15 +304,15 @@ const EDITOR_HORIZONTAL_PADDING_PATTERN =
 const EDITOR_HORIZONTAL_PADDING_ALREADY_PATCHED_PATTERN =
   /padding-left:0px\s*;padding-right:0px\s*/g;
 const EDITOR_NOTE_LAYOUT_FILE_PATTERN =
-  /^(?:3407\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
+  /^(?:\d+\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
 const EDITOR_NOTE_LAYOUT_MARGIN_PATTERN =
-  /h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40/g;
+  /(?:h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40|g=840,y=24,b=124,v=0,E=41,k=56,T=56,w="center",A=!1,C=40|g=840,y=24,b=124,v=0,T=41,E=56,k=56,_="center",w=!1,A=40)/g;
 const EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN =
-  /h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40/g;
-const TAG_SUGGESTION_HOVER_STYLES =
-  'background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out';
-const TAG_SUGGESTION_HOVER_REPLACEMENT =
-  'background-color:#1f1f1f;color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:0s ;transition-timing-function:ease-in-out';
+  /(?:h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40|g=840,y=24,b=124,v=0,E=41,k=0\s,T=0\s,w="left"\s\s,A=!1,C=40|g=840,y=24,b=124,v=0,T=41,E=0\s,k=0\s,_="left"\s\s,w=!1,A=40)/g;
+const TAG_SUGGESTION_HOVER_PATTERN =
+  /background-color:var\(--color-surface-fill-primary-hover\);(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;transition-duration:\.1s;transition-timing-function:ease-in-out/g;
+const TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN =
+  /background-color:#1f1f1f\s*;(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;transition-duration:0s\s*;transition-timing-function:ease-in-out/g;
 const DROPDOWN_ITEM_HOVER_PATTERN =
   /flex-direction:column;align-self:stretch;transition:scale \.15s;display:flex\}(\.[A-Za-z0-9_-]+):hover\{background-color:var\(--color-surface-fill-primary-hover\)\}\1:active\{scale:\.99\}/g;
 const DROPDOWN_ITEM_HOVER_ALREADY_PATCHED_PATTERN =
@@ -347,13 +356,24 @@ const NOTE_DETAIL_FRAME_SHADOW_STYLES =
 const NOTE_DETAIL_FRAME_SHADOW_REPLACEMENT =
   'box-shadow:0 0 0 1px #000;flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden';
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_PATTERN =
-  /let ([A-Za-z_$][\w$]*)=async\(t,a\)=>\{let n=await ([A-Za-z_$][\w$]*)\(a\);await \(0,s\.sleep\)\(100\);try\{t\?\.startDrag\(\{file:"",files:n,icon:l\.nativeImage\.createFromDataURL\(p\.default\)\}\)\}catch\(t\)\{b\.error\("setNativeFilesForDrag error",t\.message\)\}\},([A-Za-z_$][\w$]*)=async t=>\{let a=await \2\(t\);o\?\.writeFilePaths\(a\)\},([A-Za-z_$][\w$]*)=t=>\{l\.clipboard\.write\(\{text:t,html:t\}\)\};function ([A-Za-z_$][\w$]*)\(\)\{return\{plain:l\.clipboard\.readText\(\),html:l\.clipboard\.readHTML\(\)\}\}/g;
+  /let ([A-Za-z_$][\w$]*)=async\(t,a\)=>\{let n=await ([A-Za-z_$][\w$]*)\(a\);await \(0,s\.sleep\)\(100\);try\{t\?\.startDrag\(\{file:"",files:n,icon:l\.nativeImage\.createFromDataURL\(([A-Za-z_$][\w$]*)\.default\)\}\)\}catch\(t\)\{[A-Za-z_$][\w$]*\.error\("setNativeFilesForDrag error",t\.message\)\}\},([A-Za-z_$][\w$]*)=async t=>\{let a=await \2\(t\);o\?\.writeFilePaths\(a\)\},([A-Za-z_$][\w$]*)=t=>\{l\.clipboard\.write\(\{text:t,html:t\}\)\};function ([A-Za-z_$][\w$]*)\(\)\{return\{plain:l\.clipboard\.readText\(\),html:l\.clipboard\.readHTML\(\)\}\}/g;
 const NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN =
   /n\.isEmpty\(\)\?o\?\.writeFilePaths\(a\):l\.clipboard\.writeImage\(n\)/g;
-const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES =
-  'if((0,F.Ld)()&&x.Z.isMac)n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
-const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT =
-  'if((0,F.Ld)())n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}';
+const COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_PATTERN =
+  /if\(\(0,([A-Za-z_$][\w$]*)\.Ld\)\(\)&&[A-Za-z_$][\w$]*\.Z\.isMac\)n\.preventDefault\(\),\(0,([A-Za-z_$][\w$]*)\.HH\)\(t\.resources\.map\(\(e=>\(\{url:e\.url,filename:e\.filename,mime:e\.mime\}\)\)\)\);else\{const\{filename:e=`\$\{Date\.now\(\)\}`,mime:o,url:a\}=t\.resources\[0\];a&&n\.dataTransfer\.setData\("DownloadURL",`\$\{o\}:\$\{e\}:\$\{a\}`\)\}\}/g;
+const COMMON_EDITOR_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
+  /if\(\(0,[A-Za-z_$][\w$]*\.Ld\)\(\)\)n\.preventDefault\(\),\(0,[A-Za-z_$][\w$]*\.HH\)\(t\.resources\.map/g;
+function commonEditorNativeResourceDragReplacement(
+  match,
+  _filePath,
+  platformModuleName,
+  resourceDragModuleName,
+) {
+  return sameLengthReplacement(
+    match,
+    `if((0,${platformModuleName}.Ld)())n.preventDefault(),(0,${resourceDragModuleName}.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=\`\${Date.now()}\`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",\`\${o}:\${e}:\${a}\`)}}`,
+  );
+}
 const BORON_MAC_ONLY_RESOURCE_DRAG_PATTERN =
   /if\(e\.isBoron&&n\.boronEnv\.isMac\)t\.payload\.event\.preventDefault\(\),(?:n\.boronEnv\.isMac&&)?n\.broker\.call\("boron\.actions\.setNativeFilesForDrag",o\.resources\.map\(\(e=>\(\{url:e\.url,filename:e\.filename\?\?"",mime:e\.mime\}\)\)\)\);else\{const e=o\.resources\[0\];if\(e\)\{const\{filename:t=`\$\{n\.now\(\)\}`,mime:o,url:a\}=e;a&&([A-Za-z_$][\w$]*)\.setData\("DownloadURL",`\$\{o\}:\$\{t\}:\$\{a\}`\)\}\}/g;
 const BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
@@ -361,16 +381,19 @@ const BORON_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN =
 function boronNativeResourceDragReplacement(dataTransferName) {
   return `if(e.isBoron)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=\`\${n.now()}\`,mime:o,url:a}=e;a&&${dataTransferName}.setData("DownloadURL",\`\${o}:\${t}:\${a}\`)}}`;
 }
-const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_STYLES =
-  'let n=!1;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
-const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT =
-  'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n';
+const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_PATTERN =
+  /let ([A-Za-z_$][\w$]*)=!1;return i\.default\.isMac\?\1=await ([A-Za-z_$][\w$]*)\(t\):i\.default\.isWin&&\(\1=await ([A-Za-z_$][\w$]*)\(t\)\),\1/g;
+const LINUX_IMPORT_FOLDER_SHOULD_IMPORT_ALREADY_PATCHED_PATTERN =
+  /let [A-Za-z_$][\w$]*=!0;return i\.default\.isMac\?[A-Za-z_$][\w$]*=await [A-Za-z_$][\w$]*\(t\):i\.default\.isWin&&\([A-Za-z_$][\w$]*=await [A-Za-z_$][\w$]*\(t\)\),[A-Za-z_$][\w$]*/g;
+function linuxImportFolderShouldImportReplacement(match) {
+  return match.replace('!1', '!0');
+}
 const IMPORT_FOLDER_IGNORE_INITIAL_STYLES = 'ignoreInitial:!1';
 const IMPORT_FOLDER_IGNORE_INITIAL_REPLACEMENT = 'ignoreInitial:!0';
 const FROZEN_NAV_INITIAL_WIDTH_PATTERN =
-  /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)-\(([A-Za-z_$][\w$]*)\+([A-Za-z_$][\w$]*)\.B\),\[([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\]=\(0,([A-Za-z_$][\w$]*)\.useState\)\(([A-Za-z_$][\w$]*)\),([A-Za-z_$][\w$]*)=\(0,\7\.useRef\)\(!0\),\{show_download_app_button:([A-Za-z_$][\w$]*)\}=\(0,([A-Za-z_$][\w$]*)\.N\)\(\),([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)\.V0,([A-Za-z_$][\w$]*)=/g;
+  /([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)-\(([A-Za-z_$][\w$]*)\+([A-Za-z_$][\w$]*)\.B\),\[([A-Za-z_$][\w$]*),([A-Za-z_$][\w$]*)\]=\(0,([A-Za-z_$][\w$]*)\.useState\)\(([A-Za-z_$][\w$]*)\),([A-Za-z_$][\w$]*)=\(0,\7\.useRef\)\(!0\),\{show_download_app_button:([A-Za-z_$][\w$]*)((?:,[A-Za-z_$][\w$]*:[A-Za-z_$][\w$]*)*)\}=\(0,([A-Za-z_$][\w$]*)\.N\)\(\),([A-Za-z_$][\w$]*)=(?:(?:[A-Za-z_$][\w$]*)\?([A-Za-z_$][\w$]*)\.Y\$:\14\.V0|([A-Za-z_$][\w$]*)\.V0),([A-Za-z_$][\w$]*)=/g;
 const FROZEN_NAV_INITIAL_WIDTH_ALREADY_PATCHED_PATTERN =
-  /\[[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\]=[A-Za-z_$][\w$]*\.useState\([A-Za-z_$][\w$]*\.WB\),[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useRef\)\(!0\),\{show_download_app_button:[A-Za-z_$][\w$]*\}=\(0,[A-Za-z_$][\w$]*\.N\)\(\),[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=/g;
+  /\[[A-Za-z_$][\w$]*,[A-Za-z_$][\w$]*\]=[A-Za-z_$][\w$]*\.useState\([A-Za-z_$][\w$]*\.WB\),[A-Za-z_$][\w$]*=\(0,[A-Za-z_$][\w$]*\.useRef\)\(!0\),\{show_download_app_button:[A-Za-z_$][\w$]*(?:,[A-Za-z_$][\w$]*:[A-Za-z_$][\w$]*)*\}=\(0,[A-Za-z_$][\w$]*\.N\)\(\),[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=/g;
 function frozenNavInitialWidthReplacement(
   calcWidthName,
   viewportWidthName,
@@ -382,12 +405,15 @@ function frozenNavInitialWidthReplacement(
   _initialWidthName,
   firstRenderRefName,
   downloadFlagName,
+  additionalFeatureFlags,
   featureModuleName,
   collapsedWidthName,
-  navConstantsModuleName,
+  conditionalNavConstantsModuleName,
+  plainNavConstantsModuleName,
   maxWidthName,
 ) {
-  return `${calcWidthName}=${viewportWidthName}-(${noteMinWidthName}+${sidePaddingModuleName}.B),[${navWidthName},${setNavWidthName}]=${reactModuleName}.useState(${navConstantsModuleName}.WB),${firstRenderRefName}=(0,${reactModuleName}.useRef)(!0),{show_download_app_button:${downloadFlagName}}=(0,${featureModuleName}.N)(),${collapsedWidthName}=${navConstantsModuleName}.WB,${maxWidthName}=`;
+  const navConstantsModuleName = conditionalNavConstantsModuleName || plainNavConstantsModuleName;
+  return `${calcWidthName}=${viewportWidthName}-(${noteMinWidthName}+${sidePaddingModuleName}.B),[${navWidthName},${setNavWidthName}]=${reactModuleName}.useState(${navConstantsModuleName}.WB),${firstRenderRefName}=(0,${reactModuleName}.useRef)(!0),{show_download_app_button:${downloadFlagName}${additionalFeatureFlags}}=(0,${featureModuleName}.N)(),${collapsedWidthName}=${navConstantsModuleName}.WB,${maxWidthName}=`;
 }
 const FROZEN_NAV_PERSIST_WIDTH_PATTERN =
   /([A-Za-z_$][\w$]*)=\(0,([A-Za-z_$][\w$]*)\.useCallback\)\(\(([A-Za-z_$][\w$]*)=>\{([A-Za-z_$][\w$]*)\(([A-Za-z_$][\w$]*)\),([A-Za-z_$][\w$]*)\(\3\),\(0,([A-Za-z_$][\w$]*)\.b\)\(([A-Za-z_$][\w$]*)\.NAV_DRAWER_WIDTH,\3\),\(0,\7\.b\)\(\8\.IS_NAV_EXPANDED,\3>=([A-Za-z_$][\w$]*)\.g\$\)\}\),\[\5\]\)/g;
@@ -444,14 +470,14 @@ const ACTIVE_TAB_INNER_STYLES =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}';
 const ACTIVE_TAB_INNER_REPLACEMENT =
   '.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:#fff;font-weight:700;border-radius:24px}';
-const TAB_BUTTON_HEIGHT_STYLES =
-  '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
-const TAB_BUTTON_HEIGHT_REPLACEMENT =
-  '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
+const TAB_BUTTON_HEIGHT_PATTERN =
+  /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{letter-spacing:-\.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex(?:;position:relative)?\}/g;
+const TAB_BUTTON_HEIGHT_ALREADY_PATCHED_PATTERN =
+  /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{letter-spacing:-\.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex(?:;position:relative)?\}/g;
 const COLLAPSED_NAV_MIN_WIDTH_PATTERN =
   /([A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.)V0(,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\))/g;
 const COLLAPSED_NAV_MIN_WIDTH_ALREADY_PATCHED_PATTERN =
-  /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/g;
+  /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=\s*Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/g;
 const COLLAPSED_NAV_PADDING_TOKEN_STYLES =
   '--nav-collapsed-padding:var(--spacing-0-5)var(--spacing-2);';
 const COLLAPSED_NAV_PADDING_TOKEN_REPLACEMENT = '--nav-collapsed-padding:var(--spacing-1-5)0;';
@@ -466,9 +492,9 @@ const F4_NOTES_HOTKEY_REPLACEMENT =
 const F4_NOTES_HOTKEY_ALREADY_PATCHED_PATTERN =
   /addEventListener\("keydown",[^"]+"F4"==[A-Za-z_$][\w$]*\.key/g;
 const COLLAPSED_NOTES_TOOLTIP_PATTERN =
-  /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,a\.jsxs\)\("a",\{ref:([A-Za-z_$][\w$]*),id:([A-Za-z_$][\w$]*)\.bMj,"data-asloc":([A-Za-z_$][\w$]*)\.YZ\.Notes,/g;
+  /label:([A-Za-z_$][\w$]*)\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,([A-Za-z_$][\w$]*)\.jsxs\)\("a",\{ref:([A-Za-z_$][\w$]*),id:([A-Za-z_$][\w$]*)\.bMj,"data-asloc":([A-Za-z_$][\w$]*)\.YZ\.Notes,/g;
 const COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN =
-  /label:at\.ag\.t\("AllNotes\.label"\)\+" \(F4\)"/g;
+  /label:[A-Za-z_$][\w$]*\.ag\.t\("AllNotes\.label"\)\+" \(F4\)"/g;
 
 function notesSidebarChunkPreambleRange(text) {
   if (!text.includes('AllNotes.label') || !text.includes('qa-NAV_ALL_NOTES')) {
@@ -492,11 +518,17 @@ const patches = [
   {
     resultKey: 'disabledAutoUpdaterInit',
     description: 'disabled Electron auto-updater init',
-    filePath: 'main.js',
-    search:
-      'init(t,a){if(this._initialized)return void E.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0,this.autoUpdater.logger=E,',
-    replacementPrefix:
-      'init(t,a){if(this._initialized)return void E.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0;return;',
+    filePattern: /^main\.js$/,
+    pattern:
+      /init\(t,a\)\{if\(this\._initialized\)return void ([A-Za-z_$][\w$]*)\.warn\("Trying to initialize the AutoUpdater the second time"\);this\._initialized=!0,this\.autoUpdater\.logger=\1,/g,
+    replacementForMatch: (match, _filePath, loggerName) =>
+      sameLengthReplacement(
+        match,
+        `init(t,a){if(this._initialized)return void ${loggerName}.warn("Trying to initialize the AutoUpdater the second time");this._initialized=!0;return;`,
+      ),
+    alreadyPatchedPattern:
+      /init\(t,a\)\{if\(this\._initialized\)return void [A-Za-z_$][\w$]*\.warn\("Trying to initialize the AutoUpdater the second time"\);this\._initialized=!0;return;/g,
+    replacePattern: true,
   },
   {
     resultKey: 'neutralizedAutoUpdaterNetwork',
@@ -551,36 +583,18 @@ const patches = [
   {
     resultKey: 'normalizedCachedResourceFlacMimeType',
     description: 'normalized cached FLAC MIME type when serving local resources',
-    filePath: 'node_modules/en-conduit-electron/dist/MainResourceProxy.js',
-    search: `function handleResourceRequest(request, callback) {
-    getResource(request.url)
-        .then(resource => {
-        callback({
-            statusCode: 200,
-            headers: {
-                'Content-Type': resource.meta.mime,
-            },
-            data: resource.stream,
-        });
-    })
-        .catch(err => {
-        var _a, _b;
-        conduit_utils_1.logger.warn('ResourceProxy request failure', { url: request.url, err });
-        const data = new stream_1.Readable();
-        data._read = () => undefined;
-        data.push((_b = (_a = err.stack) !== null && _a !== void 0 ? _a : err.message) !== null && _b !== void 0 ? _b : (0, conduit_utils_1.safeStringify)(err));
-        data.push(null);
-        callback({
-            statusCode: typeof err === 'number' ? err : 500,
-            headers: {},
-            data,
-        });
-    });
-}
-`,
-    replacementPrefix: `function normalizeFlacMime(t){return String(t??"").replace(/^audio\\/x-flac\\b/i,"audio/flac")}
-function handleResourceRequest(request,callback){getResource(request.url).then(resource=>{callback({statusCode:200,headers:{"Content-Type":normalizeFlacMime(resource.meta.mime)},data:resource.stream})}).catch(err=>{var _a,_b;conduit_utils_1.logger.warn("ResourceProxy request failure",{url:request.url,err});const data=new stream_1.Readable;data._read=()=>undefined;data.push((_b=(_a=err.stack)!==null&&_a!==void 0?_a:err.message)!==null&&_b!==void 0?_b:(0,conduit_utils_1.safeStringify)(err));data.push(null);callback({statusCode:typeof err==="number"?err:500,headers:{},data})})}
-`,
+    filePattern: /^node_modules\/en-conduit-electron\/dist\/MainResourceProxy\.js$/,
+    pattern:
+      /function handleResourceRequest\(request, callback\) \{[\s\S]*?'Content-Type': resource\.meta\.mime,[\s\S]*?\n\}\nfunction getResourceMimeFilePath/g,
+    replacementForMatch: (match) =>
+      sameLengthReplacement(
+        match,
+        `function normalizeFlacMime(t){return String(t??"").replace(/^audio\\/x-flac\\b/i,"audio/flac")}
+function handleResourceRequest(request,callback){getResource(request.url).then(resource=>{callback({statusCode:200,headers:{"Content-Type":normalizeFlacMime(resource.meta.mime)},data:resource.stream})}).catch(err=>{conduit_utils_1.logger.warn("ResourceProxy request failure",{url:request.url,err});const data=new stream_1.Readable;data._read=()=>undefined;data.push("Resource unavailable");data.push(null);callback({statusCode:typeof err==="number"?err:500,headers:{"Content-Type":"text/plain"},data})})}
+function getResourceMimeFilePath`,
+      ),
+    alreadyPatchedPattern: /function normalizeFlacMime\(t\)/g,
+    replacePattern: true,
   },
   {
     resultKey: 'normalizedAudioPlayerFlacMimeType',
@@ -682,9 +696,13 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     filePattern: EDITOR_NOTE_LAYOUT_FILE_PATTERN,
     pattern: EDITOR_NOTE_LAYOUT_MARGIN_PATTERN,
     replacementForMatch: (match) =>
-      match.includes('E=56,_="center"')
-        ? 'h=840,f=24,g=124,y=0,v=41,b=0 ,E=0 ,_="left",T=!1  ,A=40'
-        : 'h=840,f=24,g=124,y=0,v=41,b=0 ,_=0 ,E="left",T=!1  ,A=40',
+      match.startsWith('g=840') && match.includes('T=41')
+        ? 'g=840,y=24,b=124,v=0,T=41,E=0 ,k=0 ,_="left"  ,w=!1,A=40'
+        : match.startsWith('g=840')
+          ? 'g=840,y=24,b=124,v=0,E=41,k=0 ,T=0 ,w="left"  ,A=!1,C=40'
+          : match.includes('E=56,_="center"')
+            ? 'h=840,f=24,g=124,y=0,v=41,b=0 ,E=0 ,_="left",T=!1  ,A=40'
+            : 'h=840,f=24,g=124,y=0,v=41,b=0 ,_=0 ,E="left",T=!1  ,A=40',
     alreadyPatchedPattern: EDITOR_NOTE_LAYOUT_MARGIN_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
     isThematic: true,
@@ -693,9 +711,15 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'visibleTagSuggestionHover',
     description: 'made tag suggestion hover background visible on black theme',
     filePattern: /\.js$/,
-    search: TAG_SUGGESTION_HOVER_STYLES,
-    replacementPrefix: TAG_SUGGESTION_HOVER_REPLACEMENT,
-    replaceAll: true,
+    pattern: TAG_SUGGESTION_HOVER_PATTERN,
+    replacementForMatch: (match) =>
+      match
+        .replace(/background-color:[^;]+;/, (declaration) =>
+          replaceCssDeclarationValue(declaration, '#1f1f1f'),
+        )
+        .replace('transition-duration:.1s;', 'transition-duration:0s ;'),
+    alreadyPatchedPattern: TAG_SUGGESTION_HOVER_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
@@ -840,13 +864,14 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
       _filePath,
       dragFunctionName,
       tempFileFunctionName,
+      iconModuleName,
       copyFunctionName,
       textFunctionName,
       readFunctionName,
     ) =>
       sameLengthReplacement(
         match,
-        `let ${dragFunctionName}=async(t,a)=>{let n=await ${tempFileFunctionName}(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})},${copyFunctionName}=async t=>{let a=await ${tempFileFunctionName}(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},${textFunctionName}=t=>l.clipboard.write({text:t,html:t});function ${readFunctionName}(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}`,
+        `let ${dragFunctionName}=async(t,a)=>{let n=await ${tempFileFunctionName}(a);t?.startDrag({file:n[0]||"",files:n,icon:l.nativeImage.createFromDataURL(${iconModuleName}.default)})},${copyFunctionName}=async t=>{let a=await ${tempFileFunctionName}(t),n=l.nativeImage.createFromPath(a[0]||"");n.isEmpty()?o?.writeFilePaths(a):l.clipboard.writeImage(n)},${textFunctionName}=t=>l.clipboard.write({text:t,html:t});function ${readFunctionName}(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}`,
       ),
     alreadyPatchedPattern: NATIVE_IMAGE_RESOURCE_CLIPBOARD_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
@@ -855,9 +880,11 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     resultKey: 'nativeResourceDragFromCommonEditor',
     description:
       'used native resource file dragging on Linux instead of Chromium DownloadURL because dragging does not work on Linux without it',
-    filePath: '3645.js',
-    search: COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_STYLES,
-    replacementPrefix: COMMON_EDITOR_NATIVE_RESOURCE_DRAG_REPLACEMENT,
+    filePattern: /^3645\.js$/,
+    pattern: COMMON_EDITOR_MAC_ONLY_RESOURCE_DRAG_PATTERN,
+    replacementForMatch: commonEditorNativeResourceDragReplacement,
+    alreadyPatchedPattern: COMMON_EDITOR_NATIVE_RESOURCE_DRAG_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: 'nativeResourceDragFromBoron',
@@ -873,9 +900,11 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'enabledImportFolderFilesOnLinux',
     description: 'enabled sync-folder file import decisions on Linux',
-    filePath: 'main.js',
-    search: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_STYLES,
-    replacementPrefix: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_REPLACEMENT,
+    filePattern: /^main\.js$/,
+    pattern: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_PATTERN,
+    replacementForMatch: linuxImportFolderShouldImportReplacement,
+    alreadyPatchedPattern: LINUX_IMPORT_FOLDER_SHOULD_IMPORT_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
   },
   {
     resultKey: 'ignoredInitialImportFolderScan',
@@ -950,9 +979,11 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'fullHeightTabButtons',
     description: 'extended tab buttons to top edge of tab shell',
-    filePath: 'boronTabShell.js',
-    search: TAB_BUTTON_HEIGHT_STYLES,
-    replacementPrefix: TAB_BUTTON_HEIGHT_REPLACEMENT,
+    filePattern: /^boronTabShell\.js$/,
+    pattern: TAB_BUTTON_HEIGHT_PATTERN,
+    replacementForMatch: (match) => match.replace('height:38px', 'height:40px'),
+    alreadyPatchedPattern: TAB_BUTTON_HEIGHT_ALREADY_PATCHED_PATTERN,
+    replacePattern: true,
     isThematic: true,
   },
   {
@@ -1001,10 +1032,10 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     description: 'labeled collapsed Notes sidebar tooltip with F4 shortcut',
     filePattern: /\.js$/,
     pattern: COLLAPSED_NOTES_TOOLTIP_PATTERN,
-    replacementForMatch: (match, _filePath, refName, elementIdsName) =>
+    replacementForMatch: (match, _filePath, i18nName, jsxName, refName, elementIdsName) =>
       sameLengthReplacement(
         match,
-        `label:at.ag.t("AllNotes.label")+" (F4)",placement:"right",children:(0,a.jsxs)("a",{ref:${refName},id:${elementIdsName}.bMj,`,
+        `label:${i18nName}.ag.t("AllNotes.label")+" (F4)",placement:"right",children:(0,${jsxName}.jsxs)("a",{ref:${refName},id:${elementIdsName}.bMj,`,
       ),
     alreadyPatchedPattern: COLLAPSED_NOTES_TOOLTIP_ALREADY_PATCHED_PATTERN,
     replacePattern: true,
@@ -1039,19 +1070,26 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
   {
     resultKey: 'removedNoteSnippetSeparators',
     description: 'removed note snippet list separator lines',
-    filePath: '3014.js',
+    filePattern: /\.js$/,
     search: '--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);',
     replacementPrefix: '--noteSnippet-border-bottom:0px solid transparent;',
+    replaceAll: true,
     isThematic: true,
   },
   {
     resultKey: 'disabledInAppForceUpdateInit',
     description: 'disabled in-app force-update init',
-    filePath: 'main.js',
-    search:
-      'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;let{feedbackLevel:a}=this;',
-    replacementPrefix:
-      'init(t=m.InAppForceUpdateChannel.public){if(this._initialized)return void f.info("Trying to init multiple times");this._initialized=!0;return;',
+    filePattern: /^main\.js$/,
+    pattern:
+      /init\(t=([A-Za-z_$][\w$]*)\.InAppForceUpdateChannel\.public\)\{if\(this\._initialized\)return void ([A-Za-z_$][\w$]*)\.info\("Trying to init multiple times"\);this\._initialized=!0;let\{feedbackLevel:[A-Za-z_$][\w$]*\}=this;/g,
+    replacementForMatch: (match, _filePath, channelName, loggerName) =>
+      sameLengthReplacement(
+        match,
+        `init(t=${channelName}.InAppForceUpdateChannel.public){if(this._initialized)return void ${loggerName}.info("Trying to init multiple times");this._initialized=!0;return;`,
+      ),
+    alreadyPatchedPattern:
+      /init\(t=[A-Za-z_$][\w$]*\.InAppForceUpdateChannel\.public\)\{if\(this\._initialized\)return void [A-Za-z_$][\w$]*\.info\("Trying to init multiple times"\);this\._initialized=!0;return;/g,
+    replacePattern: true,
   },
   {
     resultKey: 'disabledInAppForceUpdateChecks',
@@ -1060,7 +1098,7 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     search:
       'async getRemoteUpdatedList(){let t=this.remoteCheckUrl;if(!t)throw Error("Empty url");let a="UNKNOWN",n="UNKNOWN";',
     replacementPrefix:
-      'async getRemoteUpdatedList(){return{feedbackLevel:m.InAppForceUpdateFeedbackLevel.none};let t=this.remoteCheckUrl;',
+      'async getRemoteUpdatedList(){return{feedbackLevel:this.feedbackLevel};let t=this.remoteCheckUrl;',
   },
   {
     resultKey: 'quitOnMainWindowClose',
@@ -1074,9 +1112,9 @@ function handleResourceRequest(request,callback){getResource(request.url).then(r
     description: 'suppress tab state publish after tab webContents destruction',
     filePath: 'main.js',
     search:
-      'this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())',
+      'this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState()',
     replacementPrefix:
-      'this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null))',
+      'this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),void 0',
   },
 ];
 

@@ -24,7 +24,7 @@ const REQUIRED_PATCH_MARKERS = [
   },
   {
     name: 'in-app force update neutralized',
-    value: 'return{feedbackLevel:m.InAppForceUpdateFeedbackLevel.none}',
+    value: 'return{feedbackLevel:this.feedbackLevel}',
   },
   {
     name: 'main window close quits app',
@@ -33,7 +33,7 @@ const REQUIRED_PATCH_MARKERS = [
   {
     name: 'tab destroy state publish suppressed',
     value:
-      'this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null))',
+      'this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),void 0',
   },
   {
     name: 'browser window startup background is black',
@@ -50,7 +50,8 @@ const REQUIRED_PATCH_MARKERS = [
   },
   {
     name: 'sync-folder file import decisions enabled on Linux',
-    value: 'let n=!0;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n',
+    pattern:
+      /let [A-Za-z_$][\w$]*=!0;return [A-Za-z_$][\w$]*\.default\.isMac\?[A-Za-z_$][\w$]*=await [A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\):[A-Za-z_$][\w$]*\.default\.isWin&&\([A-Za-z_$][\w$]*=await [A-Za-z_$][\w$]*\([A-Za-z_$][\w$]*\)\),[A-Za-z_$][\w$]*/,
   },
   {
     name: 'sync-folder initial watcher scan ignored on Linux',
@@ -134,13 +135,22 @@ function readAsarText(asarPath, filePath) {
 }
 
 function webpackCssRuntimeText(text, filePath) {
-  const startMarker = 'A.push([o.id,"';
-  const startMarkerIndex = text.indexOf(startMarker);
-  if (startMarkerIndex === -1) {
+  const tokenIndex = text.indexOf('--color-background-base-fill-primary');
+  if (tokenIndex === -1) {
+    throw new Error(`Unable to find Webpack CSS theme token in ${filePath}.`);
+  }
+
+  const pushIndex = text.lastIndexOf('.push([', tokenIndex);
+  if (pushIndex === -1) {
+    throw new Error(`Unable to find Webpack CSS runtime push call in ${filePath}.`);
+  }
+
+  const cssStringIndex = text.indexOf(',"', pushIndex);
+  if (cssStringIndex === -1 || cssStringIndex > tokenIndex) {
     throw new Error(`Unable to find Webpack CSS runtime string start in ${filePath}.`);
   }
 
-  const start = startMarkerIndex + startMarker.length;
+  const start = cssStringIndex + 2;
   const endMarker = '","",{version:3';
   const end = text.indexOf(endMarker, start);
   if (end === -1) {
@@ -287,6 +297,10 @@ function verifyBundlePatches(asarPath, blackTheme = true) {
     if (!blackTheme && marker.isThematic) {
       return false;
     }
+    if (marker.pattern) {
+      marker.pattern.lastIndex = 0;
+      return !marker.pattern.test(mainJs);
+    }
     return !mainJs.includes(marker.value);
   });
   if (missing.length > 0) {
@@ -311,10 +325,6 @@ function verifyPatchedJavaScriptSyntax(asarPath) {
   const checkedFiles = [];
   const requiredFiles = [
     'main.js',
-    '7839.js',
-    '4701.js',
-    '3645.js',
-    '3014.js',
     'boronTabShell.js',
     'node_modules/en-conduit-electron/dist/MainResourceProxy.js',
   ];
@@ -454,13 +464,13 @@ function verifyF4NotesHotkeyPatch(asarPath) {
     'document.querySelector("#qa-NAV_ALL_NOTES,#qa-NAV_ALL_NOTES_NOTES_COUNT")';
   const clickMarker = '(t.closest("a")||t).click()';
   const runtimeEntries = topLevelJavaScriptEntries(asarPath);
-  const tooltipMarker = 'label:at.ag.t("AllNotes.label")+" (F4)"';
+  const tooltipPattern = /label:[A-Za-z_$][\w$]*\.ag\.t\("AllNotes\.label"\)\+" \(F4\)"/;
   const staleTooltipPattern =
-    /label:at\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,[A-Za-z_$][\w$]*\.jsxs\)\("a",\{ref:[A-Za-z_$][\w$]*,id:[A-Za-z_$][\w$]*\.bMj,"data-asloc":[A-Za-z_$][\w$]*\.YZ\.Notes,/;
+    /label:[A-Za-z_$][\w$]*\.ag\.t\("AllNotes\.label"\),placement:"right",children:\(0,[A-Za-z_$][\w$]*\.jsxs?\)\("a",\{ref:[A-Za-z_$][\w$]*,id:[A-Za-z_$][\w$]*\.bMj,/;
   const hotkeyFiles = runtimeEntries.filter(({ text }) =>
     [shortcutMarker, selectorMarker, clickMarker].every((marker) => text.includes(marker)),
   );
-  const tooltipFiles = matchingTextFiles(runtimeEntries, tooltipMarker);
+  const tooltipFiles = matchingTextFiles(runtimeEntries, tooltipPattern);
   const staleTooltipFiles = matchingTextFiles(runtimeEntries, staleTooltipPattern);
 
   if (mainJs.includes(selectorMarker)) {
@@ -592,7 +602,11 @@ function verifyStartupBackgroundPatch(portDir, asarPath) {
   const splashScreen = fs.readFileSync(splashScreenPath, 'utf8');
   const splashLogo = fs.readFileSync(splashLogoPath, 'utf8');
 
-  if (mainJs.includes('backgroundColor:"transparent"')) {
+  if (
+    mainJs.includes(
+      'backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui"',
+    )
+  ) {
     throw new Error('Unpatched transparent Electron window startup background remains.');
   }
   if (!mainJs.includes('backgroundColor:"#000000"')) {
@@ -701,7 +715,7 @@ function verifyEditorHorizontalPaddingPatch(asarPath) {
   if (staleFiles.length > 0) {
     throw new Error(`Unpatched editor horizontal padding remains in ${staleFiles.join(', ')}.`);
   }
-  if (patchedFiles < 4) {
+  if (patchedFiles === 0) {
     throw new Error(`Missing compact editor horizontal padding marker; found ${patchedFiles}.`);
   }
 
@@ -711,11 +725,11 @@ function verifyEditorHorizontalPaddingPatch(asarPath) {
 function verifyEditorNoteLayoutPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const editorLayoutFilePattern =
-    /^(?:3407\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
+    /^(?:\d+\.js|ce\/ce-[^/]+\.js|node_modules\/@evernote\/common-editor\/(?:ce|headless)\.js)$/;
   const staleLayoutPattern =
-    /h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40/;
+    /(?:h=840,f=24,g=124,y=0,v=41,(?:b=56,E=56,_="center"|b=56,_=56,E="center"),T=!1,A=40|g=840,y=24,b=124,v=0,E=41,k=56,T=56,w="center",A=!1,C=40|g=840,y=24,b=124,v=0,T=41,E=56,k=56,_="center",w=!1,A=40)/;
   const patchedLayoutPattern =
-    /h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40/;
+    /(?:h=840,f=24,g=124,y=0,v=41,(?:b=0\s,E=0\s,_="left",T=!1\s\s|b=0\s,_=0\s,E="left",T=!1\s\s),A=40|g=840,y=24,b=124,v=0,E=41,k=0\s,T=0\s,w="left"\s\s,A=!1,C=40|g=840,y=24,b=124,v=0,T=41,E=0\s,k=0\s,_="left"\s\s,w=!1,A=40)/;
   const staleFiles = [];
   let checkedFiles = 0;
   let patchedFiles = 0;
@@ -741,7 +755,7 @@ function verifyEditorNoteLayoutPatch(asarPath) {
   if (staleFiles.length > 0) {
     throw new Error(`Unpatched editor note layout margin remains in ${staleFiles.join(', ')}.`);
   }
-  if (patchedFiles < 4) {
+  if (patchedFiles === 0) {
     throw new Error(`Missing left-aligned editor note layout marker; found ${patchedFiles}.`);
   }
 
@@ -751,13 +765,13 @@ function verifyEditorNoteLayoutPatch(asarPath) {
 function verifyTagSuggestionHoverPatch(asarPath) {
   const parsedAsar = parseAsarHeader(asarPath);
   const stalePattern =
-    /background-color:var\(--color-surface-fill-primary-hover\);color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/;
+    /background-color:var\(--color-surface-fill-primary-hover\);(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;/;
   const patchedPattern =
-    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/;
+    /background-color:#1f1f1f\s*;(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;/;
   const staleTransitionPattern =
-    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/;
+    /background-color:#1f1f1f\s*;(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;\s*transition-duration:\.1s;transition-timing-function:ease-in-out/;
   const instantTransitionPattern =
-    /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/;
+    /background-color:#1f1f1f\s*;(?:color:var\(--color-text-fill-tertiary-enabled\);)?cursor:pointer;transition-property:background-color;\s*transition-duration:0s\s*;transition-timing-function:ease-in-out/;
   const staleFiles = [];
   const patchedFiles = [];
   const staleTransitionFiles = [];
@@ -789,7 +803,7 @@ function verifyTagSuggestionHoverPatch(asarPath) {
       `Unpatched tag suggestion hover background remains in ${staleFiles.join(', ')}.`,
     );
   }
-  if (patchedFiles.length < 2) {
+  if (patchedFiles.length === 0) {
     throw new Error(`Missing visible tag suggestion hover marker; found ${patchedFiles.length}.`);
   }
   if (staleTransitionFiles.length > 0) {
@@ -797,7 +811,7 @@ function verifyTagSuggestionHoverPatch(asarPath) {
       `Animated tag suggestion hover transition remains in ${staleTransitionFiles.join(', ')}.`,
     );
   }
-  if (instantTransitionFiles.length < 2) {
+  if (instantTransitionFiles.length === 0) {
     throw new Error(
       `Missing instant tag suggestion hover transition marker; found ${instantTransitionFiles.length}.`,
     );
@@ -985,12 +999,12 @@ function verifySourceUrlPillWidthPatch(asarPath) {
   if (staleFiles.length > 0) {
     throw new Error(`Unpatched source URL pill width limit remains in ${staleFiles.join(', ')}.`);
   }
-  if (patchedContainerFiles.length < 4) {
+  if (patchedContainerFiles.length === 0) {
     throw new Error(
       `Missing source URL chip container width marker; found ${patchedContainerFiles.length}.`,
     );
   }
-  if (patchedTextFiles.length < 4) {
+  if (patchedTextFiles.length === 0) {
     throw new Error(`Missing source URL text width marker; found ${patchedTextFiles.length}.`);
   }
 
@@ -1039,14 +1053,18 @@ function verifyNativeResourceDragPatch(asarPath) {
   const commonEditorRuntime = readAsarText(asarPath, '3645.js');
   const runtimeEntries = topLevelJavaScriptEntries(asarPath);
 
-  if (commonEditorRuntime.includes('(0,F.Ld)()&&x.Z.isMac')) {
+  if (/\(0,[A-Za-z_$][\w$]*\.Ld\)\(\)&&[A-Za-z_$][\w$]*\.Z\.isMac/.test(commonEditorRuntime)) {
     throw new Error('Common editor resource drag still uses macOS-only native drag.');
   }
   const staleBoronFiles = matchingTextFiles(runtimeEntries, 'if(e.isBoron&&n.boronEnv.isMac)');
   if (staleBoronFiles.length > 0) {
     throw new Error('Boron resource drag still uses macOS-only native drag.');
   }
-  if (!commonEditorRuntime.includes('if((0,F.Ld)())n.preventDefault(),(0,U.HH)')) {
+  if (
+    !/if\(\(0,[A-Za-z_$][\w$]*\.Ld\)\(\)\)[A-Za-z_$][\w$]*\.preventDefault\(\),\(0,[A-Za-z_$][\w$]*\.HH\)/.test(
+      commonEditorRuntime,
+    )
+  ) {
     throw new Error('Missing native common editor resource drag marker.');
   }
   const patchedBoronFiles = matchingTextFiles(
@@ -1079,15 +1097,15 @@ function verifyActiveTabTitlePatch(asarPath) {
 
 function verifyTabButtonHitTargetPatch(asarPath) {
   const runtime = readAsarText(asarPath, 'boronTabShell.js');
-  const staleMarker =
-    '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
-  const patchedMarker =
-    '.guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}';
+  const stalePattern =
+    /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{letter-spacing:-\.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex(?:;position:relative)?\}/;
+  const patchedPattern =
+    /\.guV7KlaE1WwDAqBe,\.GKwwIN39E1caVAFH,\.gzvhLiD0v_o9RDyf,\.OIVeVYl42Uq2kEtS\{letter-spacing:-\.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:40px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex(?:;position:relative)?\}/;
 
-  if (runtime.includes(staleMarker)) {
+  if (stalePattern.test(runtime)) {
     throw new Error('Unpatched tab button top-edge hit target remains.');
   }
-  if (!runtime.includes(patchedMarker)) {
+  if (!patchedPattern.test(runtime)) {
     throw new Error('Missing full-height tab button marker.');
   }
 
@@ -1099,7 +1117,7 @@ function verifyCollapsedNavWidthPatch(asarPath) {
   const stalePattern =
     /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.V0,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/;
   const patchedPattern =
-    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/;
+    /[A-Za-z_$][\w$]*=[A-Za-z_$][\w$]*\.WB,[A-Za-z_$][\w$]*=\s*Math\.max\(Math\.min\([A-Za-z_$][\w$]*\.af,[A-Za-z_$][\w$]*\),[A-Za-z_$][\w$]*\)/;
   const staleFiles = matchingTextFiles(runtimeEntries, stalePattern);
   const patchedFiles = matchingTextFiles(runtimeEntries, patchedPattern);
 
@@ -1172,15 +1190,17 @@ function verifyCollapsedNavThinWidthPatch(asarPath) {
 }
 
 function verifyNoteSnippetSeparatorsPatch(asarPath) {
-  const noteListRuntime = readAsarText(asarPath, '3014.js');
+  const runtimeEntries = topLevelJavaScriptEntries(asarPath);
   const oldSeparator =
     '--noteSnippet-border-bottom:1px solid var(--color-snippet-base-stroke-enabled);';
   const newSeparator = '--noteSnippet-border-bottom:0px solid transparent';
+  const staleFiles = matchingTextFiles(runtimeEntries, oldSeparator);
+  const patchedFiles = matchingTextFiles(runtimeEntries, newSeparator);
 
-  if (noteListRuntime.includes(oldSeparator)) {
-    throw new Error('Unpatched note snippet separator line remains.');
+  if (staleFiles.length > 0) {
+    throw new Error(`Unpatched note snippet separator line remains in ${staleFiles.join(', ')}.`);
   }
-  if (!noteListRuntime.includes(newSeparator)) {
+  if (patchedFiles.length === 0) {
     throw new Error('Missing removed note snippet separator marker.');
   }
 

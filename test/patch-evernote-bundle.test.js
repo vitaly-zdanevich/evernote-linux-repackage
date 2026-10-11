@@ -88,8 +88,8 @@ function makePatchableMainJs() {
     '}',
     'const h={app:{quit(){}}};',
     'function baseWindowOpts(t){return new BrowserWindow({webPreferences:{...t},backgroundColor:"transparent",backgroundMaterial:"none",vibrancy:"fullscreen-ui",frame:true})}',
-    'let S=async(t,a)=>{let n=await A(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(p.default)})}catch(t){b.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await A(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
-    'const I=/(^|[\\/\\\\])\\./,i={default:{isMac:false,isWin:false}},R={ignored:[t=>L(t),I],depth:0,ignoreInitial:!1,followSymlinks:!1};async function U(t){return false}async function B(t){return false}async function shouldImportFolderFile(t){let n=!1;return i.default.isMac?n=await U(t):i.default.isWin&&(n=await B(t)),n}',
+    'let S=async(t,a)=>{let n=await A(a);await (0,s.sleep)(100);try{t?.startDrag({file:"",files:n,icon:l.nativeImage.createFromDataURL(m.default)})}catch(t){v.error("setNativeFilesForDrag error",t.message)}},N=async t=>{let a=await A(t);o?.writeFilePaths(a)},M=t=>{l.clipboard.write({text:t,html:t})};function w(){return{plain:l.clipboard.readText(),html:l.clipboard.readHTML()}}',
+    'const I=/(^|[\\/\\\\])\\./,i={default:{isMac:false,isWin:false}},R={ignored:[t=>L(t),I],depth:0,ignoreInitial:!1,followSymlinks:!1};async function el(t){return false}async function ed(t){return false}async function shouldImportFolderFile(t){let n=!1;return i.default.isMac?n=await el(t):i.default.isWin&&(n=await ed(t)),n}',
     'function mainWindowClosePatch(){this.window.on("close",async t=>{if(true){this.hidden=!0,this.window.hide()}}),this.window.on("show",()=>{})}',
     'function tabDestroyedPatch(t){this.tabs.has(t)&&(this.tabs.delete(t),this.activeTabId===t&&(this.onActiveWebContentsChange?.(null,null),this.activeTabId=null),this.publishState())}',
   ].join('');
@@ -120,6 +120,56 @@ function makePatchableMainResourceProxyJs() {
             data,
         });
     });
+}
+function getResourceMimeFilePath(filePath) {
+    return filePath + '.mime';
+}
+function extractMetadataFromHeaders(headers) {
+    var _a, _b, _c, _d;
+    // Ref https://nodejs.org/api/http.html#http_message_headers certain headers are type \`string[]\` while others are \`string\`
+    const mime = ((_a = headers['content-type']) !== null && _a !== void 0 ? _a : '');
+    const rawExpires = Date.parse(((_b = headers.expires) !== null && _b !== void 0 ? _b : ''));
+    const expires = Number.isNaN(rawExpires) ? 0 : rawExpires;
+    const rawDate = Date.parse(((_c = headers.date) !== null && _c !== void 0 ? _c : ''));
+    const date = Number.isNaN(rawDate) ? 0 : rawDate;
+    const etag = ((_d = headers.etag) !== null && _d !== void 0 ? _d : '');
+    return { mime, expires, etag, ttl: expires > 0 && date > 0 ? expires - date : 0, isValid: true };
+}
+`;
+}
+
+function makePatchableCurrentMainResourceProxyJs() {
+  return `function handleResourceRequest(request, callback) {
+    getResource(request.url)
+        .then(resource => {
+        callback({
+            statusCode: 200,
+            headers: {
+                'Content-Type': resource.meta.mime,
+            },
+            data: resource.stream,
+        });
+    })
+        .catch(err => {
+        conduit_utils_1.logger.warn('ResourceProxy request failure', { url: request.url, err });
+        // Error bodies reach a renderer frame, and \`err\` embeds the requested URL, which
+        // note content controls. Serve a static plain-text body so a failed resource fetch
+        // can never render attacker-controlled HTML in the app (H1 #3895086).
+        const data = new stream_1.Readable();
+        data._read = () => undefined;
+        data.push('Resource unavailable');
+        data.push(null);
+        callback({
+            statusCode: typeof err === 'number' ? err : 500,
+            headers: {
+                'Content-Type': 'text/plain',
+            },
+            data,
+        });
+    });
+}
+function getResourceMimeFilePath(filePath) {
+    return filePath + '.mime';
 }
 function extractMetadataFromHeaders(headers) {
     var _a, _b, _c, _d;
@@ -167,9 +217,9 @@ function makePatchableAppThemeChunkJs() {
 
   return [
     '(()=>{',
-    'const A={push(){},locals:{}};',
+    'const c={push(){},locals:{}};',
     'const o={id:7839};',
-    `A.push([o.id,${JSON.stringify(runtimeCss)},"",{version:3,sources:["webpack://theme.css"],sourcesContent:[${JSON.stringify(sourceContent)}],sourceRoot:""}]);`,
+    `c.push([o.id,${JSON.stringify(runtimeCss)},"",{version:3,sources:["webpack://theme.css"],sourcesContent:[${JSON.stringify(sourceContent)}],sourceRoot:""}]);`,
     '})();',
   ].join('');
 }
@@ -193,17 +243,21 @@ function makePatchableEditorCss() {
   ].join('');
 }
 
-function makePatchableEditorNoteLayoutJs({ swappedNames = false } = {}) {
-  const layoutConstants = swappedNames
-    ? 'h=840,f=24,g=124,y=0,v=41,b=56,_=56,E="center",T=!1,A=40'
-    : 'h=840,f=24,g=124,y=0,v=41,b=56,E=56,_="center",T=!1,A=40';
+function makePatchableEditorNoteLayoutJs({ swappedNames = false, headlessNames = false } = {}) {
+  const layoutConstants = headlessNames
+    ? 'g=840,y=24,b=124,v=0,T=41,E=56,k=56,_="center",w=!1,A=40'
+    : swappedNames
+      ? 'h=840,f=24,g=124,y=0,v=41,b=56,_=56,E="center",T=!1,A=40'
+      : 'g=840,y=24,b=124,v=0,E=41,k=56,T=56,w="center",A=!1,C=40';
   return `function noteLayout(){const ${layoutConstants};return b;}`;
 }
 
-function makePatchableTagSuggestionChunkJs() {
+function makePatchableTagSuggestionChunkJs({ withoutTextColor = false } = {}) {
+  const hoverTextColor = withoutTextColor ? '' : 'color:var(--color-text-fill-tertiary-enabled);';
+
   return [
     '(()=>{',
-    'const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);color:var(--color-text-fill-tertiary-enabled);cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";',
+    `const css=".tagSuggestion{background-color:var(--color-surface-fill-primary-hover);${hoverTextColor}cursor:pointer;transition-property:background-color;transition-duration:.1s;transition-timing-function:ease-in-out}";`,
     'const noteDetailCss=".eFghltw7oGwowX2A{background-color:var(--pesoNoteDetail-bg);min-width:450px;border-radius:var(--radius-sm);margin:var(--viewpane-padding)var(--viewpane-padding)var(--viewpane-padding)var(--spacing-0-5);box-shadow:var(--shadow-app-components-background-base);flex-flow:column;flex-grow:1;display:flex;position:relative;overflow:hidden}";',
     'function boronDragPatch(){if(e.isBoron&&n.boronEnv.isMac)t.payload.event.preventDefault(),n.broker.call("boron.actions.setNativeFilesForDrag",o.resources.map((e=>({url:e.url,filename:e.filename??"",mime:e.mime}))));else{const e=o.resources[0];if(e){const{filename:t=`${n.now()}`,mime:o,url:a}=e;a&&r.setData("DownloadURL",`${o}:${t}:${a}`)}}}',
     'void css;',
@@ -225,7 +279,7 @@ function makePatchableCurrentBoronDragChunkJs() {
 function makePatchableCommonEditorDragChunkJs() {
   return [
     '(()=>{',
-    'function commonEditorDragPatch(){if((0,F.Ld)()&&x.Z.isMac)n.preventDefault(),(0,U.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}',
+    'function commonEditorDragPatch(){if((0,U.Ld)()&&F.Z.isMac)n.preventDefault(),(0,x.HH)(t.resources.map((e=>({url:e.url,filename:e.filename,mime:e.mime}))));else{const{filename:e=`${Date.now()}`,mime:o,url:a}=t.resources[0];a&&n.dataTransfer.setData("DownloadURL",`${o}:${e}:${a}`)}}',
     'void commonEditorDragPatch;',
     '})();',
   ].join('');
@@ -285,7 +339,7 @@ function makePatchableMainNavChunkJs() {
 function makePatchableTabShellJs() {
   return [
     '(()=>{',
-    'const css=".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex}.tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
+    'const css=".guV7KlaE1WwDAqBe,.GKwwIN39E1caVAFH,.gzvhLiD0v_o9RDyf,.OIVeVYl42Uq2kEtS{letter-spacing:-.12px;cursor:pointer;-webkit-app-region:no-drag;background:0 0;border:none;flex:1 1 0;justify-content:center;align-items:center;min-width:0;max-width:200px;height:38px;padding:0 2px;font-size:13px;line-height:20px;display:inline-flex;position:relative}.tBikuT2URawkHF8k,.gger9Drdmhogq7zI{width:100%;max-width:200px;color:var(--color-text-fill-quaternary-enabled);border-radius:8px;align-items:center;gap:6px;padding:5px 10px}.gger9Drdmhogq7zI{background:var(--color-surface-fill-primary-enabled);color:var(--color-text-fill-tertiary-enabled);border-radius:24px}.Iai8mBXIdZQJna_3{white-space:nowrap;text-overflow:ellipsis;text-align:left;pointer-events:none;flex:1;min-width:0;overflow:hidden}";',
     'void css;',
     '})();',
   ].join('');
@@ -336,8 +390,8 @@ function makePatchableFrozenNavChunkJs() {
 function makePatchableCurrentFrozenNavChunkJs() {
   return [
     'function frozenNav(){',
-    'let Z,j,Jv,vs,q,W,K,Ia,z,V,ro,G,i,ne,l,pe,H,Q,we,ke,de,le,ge,me;',
-    'Z=j-(Jv+vs.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:z}=(0,Ia.N)(),V=ro.V0,G=Math.max(Math.min(ro.af,Z),V);',
+    'let Z,j,Jv,vs,q,W,K,Ia,z,X,V,ro,G,i,ne,l,pe,H,Q,we,ke,de,le,ge,me;',
+    'Z=j-(Jv+vs.B),[q,W]=(0,ne.useState)(i),K=(0,ne.useRef)(!0),{show_download_app_button:z,sidebar_indentation_revamp_enabled:X}=(0,Ia.N)(),V=X?ro.Y$:ro.V0,G=Math.max(Math.min(ro.af,Z),V);',
     'le=(0,ne.useCallback)((e=>{l(q),W(e),(0,pe.b)(H.NAV_DRAWER_WIDTH,e),(0,pe.b)(H.IS_NAV_EXPANDED,e>=ro.g$)}),[q]);',
     'we=(0,ne.useMemo)((()=>({width:Q?ro.Dl:V,height:"100%"})),[Q]);',
     'ke=(0,ne.useCallback)((()=>{Q?(de(),le(ro.Dl)):ge()}),[de,Q,le,ge]);',
@@ -359,7 +413,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '7839.js': makePatchableAppThemeChunkJs(),
       '4701.js': makePatchableSourceUrlPillChunkJs(),
       '8078.js': makePatchableTagSuggestionChunkJs(),
-      '9505.js': makePatchableTagSuggestionChunkJs(),
+      '9505.js': makePatchableTagSuggestionChunkJs({ withoutTextColor: true }),
       '9977.js': makePatchableCurrentBoronDragChunkJs(),
       '3645.js': makePatchableCommonEditorDragChunkJs(),
       '1957.js': makePatchableDropdownItemChunkJs(),
@@ -374,12 +428,16 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       '4932.js': makePatchableFrozenNavChunkJs(),
       '9978.js': makePatchableCurrentFrozenNavChunkJs(),
       '3407.js': makePatchableEditorNoteLayoutJs({ swappedNames: true }),
+      '3929.js': makePatchableEditorNoteLayoutJs(),
       'ce/ce-test.js': makePatchableEditorNoteLayoutJs(),
       'node_modules/@evernote/common-editor/ce.js': makePatchableEditorNoteLayoutJs(),
+      'node_modules/@evernote/common-editor/headless.js': makePatchableEditorNoteLayoutJs({
+        headlessNames: true,
+      }),
       'ce/ce-test.css': makePatchableEditorCss(),
       'node_modules/@evernote/common-editor/headless.css': makePatchableEditorCss(),
       'node_modules/en-conduit-electron/dist/MainResourceProxy.js':
-        makePatchableMainResourceProxyJs(),
+        makePatchableCurrentMainResourceProxyJs(),
     });
 
     const firstPatch = patchEvernoteBundle(asarPath);
@@ -409,12 +467,12 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.match(
       patchedMainJs,
-      /async getRemoteUpdatedList\(\)\{return\{feedbackLevel:m\.InAppForceUpdateFeedbackLevel\.none\};let t=this\.remoteCheckUrl;/,
+      /async getRemoteUpdatedList\(\)\{return\{feedbackLevel:this\.feedbackLevel\};let t=this\.remoteCheckUrl;/,
     );
     assert.match(patchedMainJs, /h\.app\.quit\(\),0\}\}\),this\.window\.on\("show"/);
     assert.match(
       patchedMainJs,
-      /this\.tabs\.has\(t\)&&\(this\.tabs\.delete\(t\),this\.activeTabId===t&&\(this\.onActiveWebContentsChange\?\.\(null,null\),this\.activeTabId=null\)\)/,
+      /this\.activeTabId===t&&\(this\.onActiveWebContentsChange\?\.\(null,null\),this\.activeTabId=null\),void 0\s*\)/,
     );
     assert.match(
       patchedMainJs,
@@ -426,12 +484,16 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     );
     assert.match(
       patchedMainJs,
+      /S=async\(t,a\)=>\{let n=await A\(a\);t\?\.startDrag\(\{file:n\[0\]\|\|"",files:n,icon:l\.nativeImage\.createFromDataURL\(m\.default\)\}\)\}/,
+    );
+    assert.match(
+      patchedMainJs,
       /N=async t=>\{let a=await A\(t\),n=l\.nativeImage\.createFromPath\(a\[0\]\|\|""\);/,
     );
     assert.match(patchedMainJs, /ignoreInitial:!0/);
     assert.match(
       patchedMainJs,
-      /let n=!0;return i\.default\.isMac\?n=await U\(t\):i\.default\.isWin&&\(n=await B\(t\)\),n/,
+      /let n=!0;return i\.default\.isMac\?n=await el\(t\):i\.default\.isWin&&\(n=await ed\(t\)\),n/,
     );
     assert.match(patchedMainJs, /t\?\.startDrag\(\{file:n\[0\]\|\|"",files:n,icon:/);
     assert.doesNotMatch(patchedMainJs, /if\(this\.warmTab\|\|this\.isPreloadingWarmTab\)return/);
@@ -439,7 +501,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotMatch(patchedMainJs, /ignoreInitial:!1/);
     assert.doesNotMatch(
       patchedMainJs,
-      /let n=!1;return i\.default\.isMac\?n=await U\(t\):i\.default\.isWin&&\(n=await B\(t\)\),n/,
+      /let n=!1;return i\.default\.isMac\?n=await el\(t\):i\.default\.isWin&&\(n=await ed\(t\)\),n/,
     );
     assert.doesNotMatch(
       patchedMainJs,
@@ -519,15 +581,24 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     const patchedEditorNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, 'ce/ce-test.js');
     assert.match(
       patchedEditorNoteLayoutChunkJs,
-      /h=840,f=24,g=124,y=0,v=41,b=0\s,E=0\s,_="left",T=!1\s\s,A=40/,
+      /g=840,y=24,b=124,v=0,E=41,k=0\s,T=0\s,w="left"\s\s,A=!1,C=40/,
     );
-    assert.doesNotMatch(patchedEditorNoteLayoutChunkJs, /b=56,E=56,_="center"/);
+    assert.doesNotMatch(patchedEditorNoteLayoutChunkJs, /k=56,T=56,w="center"/);
     const patchedEditorSwappedNoteLayoutChunkJs = readMinimalAsarEntry(asarPath, '3407.js');
     assert.match(
       patchedEditorSwappedNoteLayoutChunkJs,
       /h=840,f=24,g=124,y=0,v=41,b=0\s,_=0\s,E="left",T=!1\s\s,A=40/,
     );
     assert.doesNotMatch(patchedEditorSwappedNoteLayoutChunkJs, /b=56,_=56,E="center"/);
+    const patchedEditorHeadlessNoteLayoutChunkJs = readMinimalAsarEntry(
+      asarPath,
+      'node_modules/@evernote/common-editor/headless.js',
+    );
+    assert.match(
+      patchedEditorHeadlessNoteLayoutChunkJs,
+      /g=840,y=24,b=124,v=0,T=41,E=0\s,k=0\s,_="left"\s\s,w=!1,A=40/,
+    );
+    assert.doesNotMatch(patchedEditorHeadlessNoteLayoutChunkJs, /E=56,k=56,_="center"/);
     assert.match(
       patchedEditorCss,
       /body\.darkMode en-note\.peso\{background-color:#000\s+;color:#e6e6e6\}/,
@@ -568,7 +639,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.doesNotThrow(() => new Function(patchedTagSuggestionChunkJs));
     assert.match(
       patchedSecondTagSuggestionChunkJs,
-      /background-color:#1f1f1f\s*;color:var\(--color-text-fill-tertiary-enabled\);cursor:pointer;transition-property:background-color;/,
+      /background-color:#1f1f1f\s*;cursor:pointer;transition-property:background-color;/,
     );
     assert.doesNotMatch(
       patchedSecondTagSuggestionChunkJs,
@@ -594,9 +665,9 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     const patchedCommonEditorDragChunkJs = readMinimalAsarEntry(asarPath, '3645.js');
     assert.match(
       patchedCommonEditorDragChunkJs,
-      /if\(\(0,F\.Ld\)\(\)\)n\.preventDefault\(\),\(0,U\.HH\)\(t\.resources\.map/,
+      /if\(\(0,U\.Ld\)\(\)\)n\.preventDefault\(\),\(0,x\.HH\)\(t\.resources\.map/,
     );
-    assert.doesNotMatch(patchedCommonEditorDragChunkJs, /&&x\.Z\.isMac/);
+    assert.doesNotMatch(patchedCommonEditorDragChunkJs, /&&F\.Z\.isMac/);
     assert.doesNotThrow(() => new Function(patchedCommonEditorDragChunkJs));
     const patchedDropdownItemChunkJs = readMinimalAsarEntry(asarPath, '1957.js');
     assert.match(
@@ -799,6 +870,10 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
     assert.match(patchedCurrentFrozenNavChunkJs, /\[q,W\]=ne\.useState\(ro\.WB\)/);
     assert.match(
       patchedCurrentFrozenNavChunkJs,
+      /\{show_download_app_button:z,sidebar_indentation_revamp_enabled:X\}=\(0,Ia\.N\)\(\),V=ro\.WB/,
+    );
+    assert.match(
+      patchedCurrentFrozenNavChunkJs,
       /W\(30\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,30\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,!1\)/,
     );
     assert.match(
@@ -816,6 +891,7 @@ test('patchEvernoteBundle applies Linux port patches in-place', () => {
       /W\(e\),\(0,pe\.b\)\(H\.NAV_DRAWER_WIDTH,e\),\(0,pe\.b\)\(H\.IS_NAV_EXPANDED,e>=ro\.g\$\)/,
     );
     assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /width:Q\?ro\.Dl:V/);
+    assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /V=X\?ro\.Y\$:ro\.V0/);
     assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /Q\?\(de\(\),le\(ro\.Dl\)\):ge\(\)/);
     assert.doesNotMatch(patchedCurrentFrozenNavChunkJs, /W\(me\(t\)\)/);
     assert.match(
