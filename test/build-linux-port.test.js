@@ -5,7 +5,11 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const { launcherScript, patchStaticResources } = require('../scripts/build-linux-port');
+const {
+  buildNativeModules,
+  launcherScript,
+  patchStaticResources,
+} = require('../scripts/build-linux-port');
 
 function makeTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'evernote-launcher-test-'));
@@ -32,6 +36,69 @@ function writeLauncher(appDir) {
   fs.chmodSync(launcher, 0o755);
   return launcher;
 }
+
+test('native addon installs serialize scripts sharing Electron headers', (t) => {
+  const asarPath = '/fixtures/evernote/app.asar';
+  const versions = {
+    keytar: '7.9.0',
+    'better-sqlite3': '12.2.0',
+    '@ronomon/opened': '1.5.2',
+    'electron-native-auth': '0.2.0',
+  };
+  const header = { files: {} };
+  const packageFiles = new Map();
+  for (const [name, version] of Object.entries(versions)) {
+    const packagePath = `node_modules/${name}/package.json`;
+    let entry = header;
+    for (const part of packagePath.split('/').slice(0, -1)) {
+      entry.files[part] ||= { files: {} };
+      entry = entry.files[part];
+    }
+    entry.files['package.json'] = { unpacked: true };
+    packageFiles.set(`${asarPath}.unpacked/${packagePath}`, JSON.stringify({ name, version }));
+  }
+  const encodedHeader = Buffer.from(JSON.stringify(header));
+  const prefix = Buffer.alloc(16);
+  prefix.writeUInt32LE(encodedHeader.length + 8, 4);
+  prefix.writeUInt32LE(encodedHeader.length, 12);
+  const asar = Buffer.concat([prefix, encodedHeader]);
+
+  // Keep this mocked build away from the real native build cache and npm registry.
+  t.mock.method(fs, 'readFileSync', (filePath) => {
+    if (filePath === asarPath) {
+      return asar;
+    }
+    assert.ok(packageFiles.has(filePath), `Unexpected file: ${filePath}`);
+    return packageFiles.get(filePath);
+  });
+  t.mock.method(fs, 'rmSync', () => {});
+  t.mock.method(fs, 'mkdirSync', () => {});
+  t.mock.method(fs, 'writeFileSync', () => {});
+  const spawn = t.mock.method(childProcess, 'spawnSync', () => ({ status: 0 }));
+
+  const modules = buildNativeModules(asarPath, '37.6.0');
+
+  assert.equal(spawn.mock.calls.length, 1);
+  const [command, args, options] = spawn.mock.calls[0].arguments;
+  assert.equal(command, 'npm');
+  assert.deepEqual(args, [
+    'install',
+    '--foreground-scripts',
+    ...Object.entries(versions).map(([name, version]) => `${name}@${version}`),
+  ]);
+  assert.equal(options.env.npm_config_build_from_source, 'true');
+  assert.equal(options.env.npm_config_runtime, 'electron');
+  assert.equal(options.env.npm_config_target, '37.6.0');
+  assert.equal(options.env.npm_config_disturl, 'https://electronjs.org/headers');
+  assert.equal(path.basename(options.cwd), 'native');
+  assert.deepEqual(
+    modules.map(({ name, version }) => ({ name, version })),
+    Object.entries(versions).map(([name, version]) => ({ name, version })),
+  );
+  for (const mod of modules) {
+    assert.equal(mod.builtPath, path.join(options.cwd, mod.source));
+  }
+});
 
 test('launcher initializes first-run local settings', () => {
   const tempDir = makeTempDir();

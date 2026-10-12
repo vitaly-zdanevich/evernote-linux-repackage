@@ -218,6 +218,7 @@ function getNativeModuleSpecs(asarPath) {
   });
 }
 
+/** Builds addons sequentially to avoid races in node-gyp's shared Electron header cache. */
 function buildNativeModules(asarPath, electronVersion) {
   const modules = getNativeModuleSpecs(asarPath);
   const nativeBuildDir = path.join(WORK_DIR, 'native');
@@ -236,7 +237,7 @@ function buildNativeModules(asarPath, electronVersion) {
   );
 
   const packages = modules.map((mod) => `${mod.name}@${mod.version}`);
-  run('npm', ['install', ...packages], {
+  run('npm', ['install', '--foreground-scripts', ...packages], {
     cwd: nativeBuildDir,
     env: {
       npm_config_build_from_source: 'true',
@@ -523,4 +524,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { launcherScript, patchStaticResources };
+module.exports = { buildNativeModules, launcherScript, patchStaticResources };
